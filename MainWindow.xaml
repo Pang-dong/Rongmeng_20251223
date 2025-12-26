@@ -1,0 +1,66 @@
+﻿<Window x:Class="Rongmeng_20251223.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Rongmeng_20251223"
+        mc:Ignorable="d"
+        Title="融梦x5控制应用程序" Height="720" Width="970" MinHeight="600" MinWidth="800"
+        >
+    <Grid Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="200"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="150"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Column="0" Grid.Row="0" Grid.RowSpan="2" Margin="0,0,10,0">
+            <GroupBox Header="连接设置" Margin="0,0,0,10">
+                <StackPanel>
+                    <Label Content="IP地址：" Margin="0,5,0,0"/>
+                    <TextBox x:Name="IpAddressTextBox" 
+             Text="{Binding DeviceInfo.IPAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+             Height="24" Margin="0,0,0,5"/>
+
+                    <Label Content="端口号：" Margin="0,5,0,0"/>
+                    <TextBox x:Name="PortTextBox" 
+             Text="{Binding DeviceInfo.Port, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+             Height="24" Margin="0,0,0,5"/>
+
+            <Button x:Name="ConnectButton" Content="{Binding ConnectButtonText}" Command="{Binding ConnectCommand}" Height="30" Margin="0,0,0,5"/>
+                    <Button x:Name="TestConnectionButton" Content="{Binding DisConnectButtonText}" Height="30" Margin="0,0,0,5" Command="{Binding DisConnectCommand}" />
+                    <TextBlock Text="提示：如果连接失败，请尝试端口8080" Margin="0,5,0,0" FontSize="10" Foreground="Gray" TextWrapping="Wrap"/>
+                </StackPanel>
+            </GroupBox>
+
+            <GroupBox Header="图像操作" Margin="0,0,0,10">
+                <StackPanel>
+                    <Button x:Name="SavePictureButton" Content="保存图片" Height="30" Margin="0,5" Click="SavePictureButton_Click"/>
+                </StackPanel>
+            </GroupBox>
+
+            <GroupBox Header="相机控制" Margin="0,0,0,10">
+                <ListBox x:Name="CameraControlListBox" BorderThickness="0" Background="Transparent" ItemsSource="{Binding CameraControls}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Button Content="{Binding Content}" Command="{Binding Command}" Height="30" Margin="0,2"/>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </GroupBox>
+        </StackPanel>
+        <GroupBox Header="图像预览" Grid.Column="1" Grid.Row="0" Margin="5,0,0,5">
+            <Border BorderBrush="DarkGray" BorderThickness="1" Margin="5">
+                <Image x:Name="PreviewImage" Stretch="Uniform" Margin="5"/>
+            </Border>
+        </GroupBox>
+        <GroupBox Header="连接状态" Grid.Column="1" Grid.Row="1" Margin="5,5,0,0">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" x:Name="LogScrollViewer">
+                <TextBlock x:Name="ConnectionStatusText" Text="{Binding StatusText}" Margin="5" TextWrapping="Wrap" FontFamily="Consolas" SizeChanged="ConnectionStatusText_SizeChanged"/>
+            </ScrollViewer>
+        </GroupBox>
+    </Grid>
+</Window>
