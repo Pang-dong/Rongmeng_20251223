@@ -82,6 +82,24 @@ namespace Rongmeng_20251223.ViewModels
         // 只读属性：按钮文字
         public string ConnectButtonText => IsConnecting ? "正在连接..." : "连接";
         public string DisConnectButtonText => IsDisConnecting ? "正在断开..." : "断开连接";
+        // 用于控制判定框显示的开关
+        private bool _isAutoTesting;
+        public bool IsAutoTesting { get => _isAutoTesting; set => SetProperty(ref _isAutoTesting, value); }
+
+        // 当前正在测的项目名称
+        private string _currentTestItemName;
+        public string CurrentTestItemName { get => _currentTestItemName; set => SetProperty(ref _currentTestItemName, value); }
+
+        // 给用户的提示文字
+        private string _currentTestPrompt;
+        public string CurrentTestPrompt { get => _currentTestPrompt; set => SetProperty(ref _currentTestPrompt, value); }
+
+        // 核心：用于暂停代码运行，直到用户点击按钮的“信号灯”
+        private TaskCompletionSource<bool> _userInputSignal;
+
+        // 自动化测试命令和判定命令
+        public IAsyncRelayCommand StartAutoTestCommand { get; }
+        public IRelayCommand<string> UserJudgmentCommand { get; }
 
         // 1. 手动定义命令属性
         public IRelayCommand AuthorizeCommand { get; }
@@ -102,6 +120,8 @@ namespace Rongmeng_20251223.ViewModels
             TurnOffLedCommand = new RelayCommand(TurnOffLed);
             TurnOnVideoCommand = new RelayCommand(TurnOnVideo);
             TurnOffVideoCommand = new RelayCommand(TurnOffVideo);
+            StartAutoTestCommand = new AsyncRelayCommand(RunAutoTestSequence);
+            UserJudgmentCommand = new RelayCommand<string>(OnUserJudgmentReceived);
             this.lHviedoApi = api;
             WeakReferenceMessenger.Default.Register<Messages>(this, (r, m) =>
             {
@@ -123,7 +143,7 @@ namespace Rongmeng_20251223.ViewModels
             CameraControls = new ObservableCollection<CameraControlItem>
             {
                 new CameraControlItem { Content = "摄像头授权", Command = AuthorizeCommand },
-                new CameraControlItem { Content = "重启摄像头", Command = RebootCommand },
+               // new CameraControlItem { Content = "重启摄像头", Command = RebootCommand },
                 new CameraControlItem { Content = "打开LED",   Command = TurnOnLedCommand },
                 new CameraControlItem { Content = "关闭LED",   Command = TurnOffLedCommand },
                 new CameraControlItem { Content = "打开视频流", Command = TurnOnVideoCommand },
@@ -132,6 +152,78 @@ namespace Rongmeng_20251223.ViewModels
             ConnectCommand = new AsyncRelayCommand(Connect, CanConnect);
             DisConnectCommand = new AsyncRelayCommand(DisConnect, CanDisConnect);
             DeviceInfo = new TcpDeviceinfo();
+        }
+
+        private async Task RunAutoTestSequence()
+        {
+            if (IsAutoTesting) return;
+
+            if (lHviedoApi == null)
+            {
+                MessageBox.Show("请先连接设备！", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            try
+            {
+                IsAutoTesting = true; // 【关键】显示判定框
+                AddLog(">>>>>> 开启自动化检测流程 <<<<<<");
+
+                await Task.Delay(300);
+
+                foreach (var step in CameraControls)
+                {
+                    CurrentTestItemName = step.Content;
+                    CurrentTestPrompt = $"正在执行 [{step.Content}]，请观察现象...";
+
+                    // 4. 【关键修改】在循环内部捕获命令异常
+                    // 这样即使“摄像头授权”失败了，程序也不会崩，而是让你点 FAIL
+                    try
+                    {
+                        if (step.Command.CanExecute(null))
+                        {
+                            step.Command.Execute(null);
+                        }
+                    }
+                    catch (Exception cmdEx)
+                    {
+                        AddLog($"[警告] 指令发送异常: {cmdEx.Message}");
+                        CurrentTestPrompt = "指令发送失败！请检查连接，或直接判定为 FAIL。";
+                    }
+                    _userInputSignal = new TaskCompletionSource<bool>();
+                    bool isPass = await _userInputSignal.Task;
+
+                    // 6. 处理判定结果
+                    if (isPass)
+                    {
+                        AddLog($"[PASS] {step.Content} -> 合格");
+                    }
+                    else
+                    {
+                        AddLog($"[FAIL] {step.Content} -> 不合格，测试终止。");
+                        MessageBox.Show($"测试在步骤 [{step.Content}] 失败！", "测试不合格", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return; // 终止流程，跳到 finally
+                    }
+
+                    // 步骤间稍微停顿，体验更好
+                    await Task.Delay(200);
+                }
+            }
+            catch (Exception ex)
+            {
+                AddLog($"流程异常中断: {ex.Message}");
+                MessageBox.Show($"发生错误: {ex.Message}");
+            }
+            finally
+            {
+                // 只有流程彻底结束（跑完或报错）才隐藏框
+                IsAutoTesting = false;
+            }
+        }
+
+        private void OnUserJudgmentReceived(string result)
+        {
+            _userInputSignal?.TrySetResult(result == "PASS");
         }
 
         private void ProcessResponse(IDocommand responseFrame)

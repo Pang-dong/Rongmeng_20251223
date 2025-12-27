@@ -5,45 +5,45 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Rongmeng_20251223"
         mc:Ignorable="d"
-        Title="融梦x5控制应用程序" Height="720" Width="970" MinHeight="600" MinWidth="800"
-        >
+        Title="融梦x5控制应用程序" Height="720" Width="970" MinHeight="600" MinWidth="800">
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </Window.Resources>
+
     <Grid Margin="10">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="200"/>
+            <ColumnDefinition Width="220"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
+
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="150"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="180"/>
         </Grid.RowDefinitions>
-        <StackPanel Grid.Column="0" Grid.Row="0" Grid.RowSpan="2" Margin="0,0,10,0">
+
+        <StackPanel Grid.Column="0" Grid.Row="0" Grid.RowSpan="3" Margin="0,0,10,0">
             <GroupBox Header="连接设置" Margin="0,0,0,10">
                 <StackPanel>
                     <Label Content="IP地址：" Margin="0,5,0,0"/>
-                    <TextBox x:Name="IpAddressTextBox" 
-             Text="{Binding DeviceInfo.IPAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-             Height="24" Margin="0,0,0,5"/>
-
+                    <TextBox Text="{Binding DeviceInfo.IPAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="24" Margin="0,0,0,5"/>
                     <Label Content="端口号：" Margin="0,5,0,0"/>
-                    <TextBox x:Name="PortTextBox" 
-             Text="{Binding DeviceInfo.Port, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-             Height="24" Margin="0,0,0,5"/>
-
-            <Button x:Name="ConnectButton" Content="{Binding ConnectButtonText}" Command="{Binding ConnectCommand}" Height="30" Margin="0,0,0,5"/>
-                    <Button x:Name="TestConnectionButton" Content="{Binding DisConnectButtonText}" Height="30" Margin="0,0,0,5" Command="{Binding DisConnectCommand}" />
-                    <TextBlock Text="提示：如果连接失败，请尝试端口8080" Margin="0,5,0,0" FontSize="10" Foreground="Gray" TextWrapping="Wrap"/>
+                    <TextBox Text="{Binding DeviceInfo.Port, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="24" Margin="0,0,0,5"/>
+                    <Button Content="{Binding ConnectButtonText}" Command="{Binding ConnectCommand}" Height="30" Margin="0,0,0,5"/>
+                    <Button Content="{Binding DisConnectButtonText}" Command="{Binding DisConnectCommand}" Height="30" Margin="0,0,0,5"/>
                 </StackPanel>
             </GroupBox>
 
-            <GroupBox Header="图像操作" Margin="0,0,0,10">
+            <GroupBox Header="自动化流程" Margin="0,0,0,10" BorderBrush="Orange" BorderThickness="2">
                 <StackPanel>
-                    <Button x:Name="SavePictureButton" Content="保存图片" Height="30" Margin="0,5" Click="SavePictureButton_Click"/>
+                    <Button Content="开始自动化测试" Command="{Binding StartAutoTestCommand}" 
+                            Height="45" FontWeight="Bold" Background="Orange" Foreground="White" Margin="5"/>
                 </StackPanel>
             </GroupBox>
 
-            <GroupBox Header="相机控制" Margin="0,0,0,10">
-                <ListBox x:Name="CameraControlListBox" BorderThickness="0" Background="Transparent" ItemsSource="{Binding CameraControls}">
+            <GroupBox Header="相机控制(手动)" Margin="0,0,0,10">
+                <ListBox x:Name="CameraControlListBox" BorderThickness="0" Background="Transparent" ItemsSource="{Binding CameraControls}" MaxHeight="300">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <Button Content="{Binding Content}" Command="{Binding Command}" Height="30" Margin="0,2"/>
@@ -51,15 +51,49 @@
                     </ListBox.ItemTemplate>
                 </ListBox>
             </GroupBox>
+
+            <GroupBox Header="图像操作" Margin="0,0,0,10">
+                <Button Content="保存图片" Height="30" Margin="0,5" Click="SavePictureButton_Click"/>
+            </GroupBox>
         </StackPanel>
+
         <GroupBox Header="图像预览" Grid.Column="1" Grid.Row="0" Margin="5,0,0,5">
             <Border BorderBrush="DarkGray" BorderThickness="1" Margin="5">
                 <Image x:Name="PreviewImage" Stretch="Uniform" Margin="5"/>
             </Border>
         </GroupBox>
-        <GroupBox Header="连接状态" Grid.Column="1" Grid.Row="1" Margin="5,5,0,0">
+
+        <GroupBox Grid.Column="1" Grid.Row="1" Header="自动化测试判定 (请操作)" Margin="5,5,0,5"  MinHeight="120"
+                  BorderBrush="#007ACC" BorderThickness="2"
+                  Visibility="{Binding IsAutoTesting, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Grid Background="#F0F8FF" Margin="5">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel VerticalAlignment="Center" Margin="15,10">
+                    <TextBlock Text="{Binding CurrentTestItemName}" FontSize="26" FontWeight="Bold" Foreground="#007ACC"/>
+                    <TextBlock Text="{Binding CurrentTestPrompt}" FontSize="14" Foreground="DarkRed" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="FAIL (不合格)" Command="{Binding UserJudgmentCommand}" CommandParameter="FAIL"
+                            Background="#FFB6B6" Foreground="DarkRed" FontWeight="Bold" Width="120" Height="60" Margin="10"/>
+                    <Button Content="PASS (合格)" Command="{Binding UserJudgmentCommand}" CommandParameter="PASS"
+                            Background="#B6FFB6" Foreground="DarkGreen" FontWeight="Bold" Width="120" Height="60" Margin="10"/>
+                </StackPanel>
+            </Grid>
+        </GroupBox>
+
+        <GroupBox Header="连接状态与日志" Grid.Column="1" Grid.Row="2" Margin="5,5,0,0">
             <ScrollViewer VerticalScrollBarVisibility="Auto" x:Name="LogScrollViewer">
-                <TextBlock x:Name="ConnectionStatusText" Text="{Binding StatusText}" Margin="5" TextWrapping="Wrap" FontFamily="Consolas" SizeChanged="ConnectionStatusText_SizeChanged"/>
+                <TextBlock x:Name="ConnectionStatusText" 
+               Text="{Binding StatusText}" 
+               Margin="5" 
+               TextWrapping="Wrap" 
+               FontFamily="Consolas" 
+               SizeChanged="ConnectionStatusText_SizeChanged"/>
             </ScrollViewer>
         </GroupBox>
     </Grid>
