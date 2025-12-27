@@ -143,7 +143,7 @@ namespace Rongmeng_20251223.ViewModels
             CameraControls = new ObservableCollection<CameraControlItem>
             {
                 new CameraControlItem { Content = "摄像头授权", Command = AuthorizeCommand },
-               // new CameraControlItem { Content = "重启摄像头", Command = RebootCommand },
+                //new CameraControlItem { Content = "重启摄像头", Command = RebootCommand },
                 new CameraControlItem { Content = "打开LED",   Command = TurnOnLedCommand },
                 new CameraControlItem { Content = "关闭LED",   Command = TurnOffLedCommand },
                 new CameraControlItem { Content = "打开视频流", Command = TurnOnVideoCommand },
@@ -202,7 +202,7 @@ namespace Rongmeng_20251223.ViewModels
                     {
                         AddLog($"[FAIL] {step.Content} -> 不合格，测试终止。");
                         MessageBox.Show($"测试在步骤 [{step.Content}] 失败！", "测试不合格", MessageBoxButton.OK, MessageBoxImage.Error);
-                        return; // 终止流程，跳到 finally
+                        return;
                     }
 
                     // 步骤间稍微停顿，体验更好
@@ -303,6 +303,8 @@ namespace Rongmeng_20251223.ViewModels
         }
         private void Reboot()
         {
+            
+            string datatime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
             MessageBox.Show("正在执行：重启摄像头");
         }
         private void TurnOnLed()

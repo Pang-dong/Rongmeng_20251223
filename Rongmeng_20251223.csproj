@@ -9,7 +9,7 @@
     <RootNamespace>Rongmeng_20251223</RootNamespace>
     <AssemblyName>Rongmeng_20251223</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
-    <LangVersion>latest</LangVersion>
+    <LangVersion>9.0</LangVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <WarningLevel>4</WarningLevel>
@@ -71,13 +71,23 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Interface\ILHviedoApiCallBack.cs" />
+    <Compile Include="Interface\Model\AppConfig.cs" />
     <Compile Include="Interface\Model\MessageICommand.cs" />
     <Compile Include="Interface\Model\Messages.cs" />
     <Compile Include="LH\lh\ClientApi.cs" />
+    <Compile Include="LH\lh\ConfigManager.cs" />
     <Compile Include="LH\lh\LicenseService.cs" />
     <Compile Include="LH\lh\MessageType.cs" />
     <Compile Include="LH\lh\TcpDeviceinfo.cs" />
+    <Compile Include="LoginWindow.xaml.cs">
+      <DependentUpon>LoginWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ViewModels\LoginViewModel.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
+    <Page Include="LoginWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
