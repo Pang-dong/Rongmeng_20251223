@@ -216,7 +216,6 @@ namespace Rongmeng_20251223.ViewModels
             }
             finally
             {
-                // 只有流程彻底结束（跑完或报错）才隐藏框
                 IsAutoTesting = false;
             }
         }
