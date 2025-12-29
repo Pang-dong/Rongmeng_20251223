@@ -14,5 +14,7 @@ namespace Rongmeng_20251223.Interface.Model
         public string Tips { get; set; }         // 操作提示
         public int Timeout { get; set; }         // 防呆时间(秒)
         public string MesName { get; set; }
+        public string ParamType { get; set; } = "None";// [新增] 参数类型： "None"(默认), "Int", "String"
+        public string ParamValue { get; set; } = ""; // [新增] 参数值： "0", "123456", "SomeString"
     }
 }

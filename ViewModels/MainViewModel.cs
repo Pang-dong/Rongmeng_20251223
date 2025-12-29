@@ -191,9 +191,7 @@ namespace Rongmeng_20251223.ViewModels
                 AddLog($"加载配置失败: {ex.Message}");
             }
         }
-        /// <summary>
-        /// 通用的测试执行逻辑：发指令 + 提示 + 防呆延时
-        /// </summary>
+        // 修改 RunGenericTest 方法
         private async Task RunGenericTest(StationTestItem item)
         {
             if (lHviedoApi == null)
@@ -201,7 +199,6 @@ namespace Rongmeng_20251223.ViewModels
                 MessageBox.Show("请先连接设备！");
                 return;
             }
-
             try
             {
                 // 1. 设置界面提示
@@ -209,15 +206,39 @@ namespace Rongmeng_20251223.ViewModels
                 CurrentTestPrompt = item.Tips;
                 AddLog($"执行: {item.Title}");
 
-                // 2. 解析并发送指令 (Hex String -> UInt16)
+                // 2. 解析指令 ID
                 ushort cmdId = Convert.ToUInt16(item.Command, 16);
                 CommandType type = (CommandType)cmdId;
 
-                // 简单指令直接发送，特殊指令(如鉴权)可在此处加 if 判断
-                IDocommand docommand = SelectFactory.CreateDocomandIntArray(MessageTypes.Command, type);
-                lHviedoApi.Send(docommand);
+                // 3. 【核心修改】根据参数类型构建不同的命令包
+                IDocommand docommand = null;
 
-                // 3. 防呆倒计时 (Timeout)
+                // 规一化转小写处理，防止配置大小写不一致
+                string paramType = item.ParamType?.ToLower() ?? "none";
+
+                switch (paramType)
+                {
+                    case "int":
+                        // 处理 Int 类型参数 (例如打开视频流需要传 0)
+                        int intVal = 0;
+                        int.TryParse(item.ParamValue, out intVal);
+                        // 使用 CreateDocomandInt 发送带整数参数的包
+                        docommand = SelectFactory.CreateDocomandInt(MessageTypes.Command, type, intVal);
+                        break;
+
+                    case "string":
+                        docommand = SelectFactory.CreateDocomandStringAnd(MessageTypes.Command, type, item.ParamValue);
+                        break;
+
+                    case "none":
+                    default:
+                        docommand = SelectFactory.CreateDocomandIntArray(MessageTypes.Command, type);
+                        break;
+                }
+                if (docommand != null)
+                {
+                    lHviedoApi.Send(docommand);
+                }
                 if (item.Timeout > 0)
                 {
                     string originalTips = item.Tips;
