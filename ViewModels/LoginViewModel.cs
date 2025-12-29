@@ -85,7 +85,7 @@ namespace Rongmeng_20251223.ViewModels
             _api = api;
 
             StationList.Add("授权工站");
-            StationList.Add("功能测试工站");
+            StationList.Add("功能测试");
             StationList.Add("老化工站");
 
             // 读取配置

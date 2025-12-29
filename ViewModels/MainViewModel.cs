@@ -115,6 +115,7 @@ namespace Rongmeng_20251223.ViewModels
 
         public MainViewModel(ClientApi api,string stationName)
         {
+            CameraControls = new ObservableCollection<CameraControlItem>();
             // 2. 在构造函数里初始化命令
             AuthorizeCommand = new RelayCommand(Authorize);
             RebootCommand = new RelayCommand(Reboot);
@@ -141,17 +142,6 @@ namespace Rongmeng_20251223.ViewModels
                     ProcessResponse(responseFrame);
                 });
             });//消息分流后获取方法
-
-            // 3. 初始化列表
-            CameraControls = new ObservableCollection<CameraControlItem>
-            {
-                new CameraControlItem { Content = "摄像头授权", Command = AuthorizeCommand },
-                //new CameraControlItem { Content = "重启摄像头", Command = RebootCommand },
-                new CameraControlItem { Content = "打开LED",   Command = TurnOnLedCommand },
-                new CameraControlItem { Content = "关闭LED",   Command = TurnOffLedCommand },
-                new CameraControlItem { Content = "打开视频流", Command = TurnOnVideoCommand },
-                new CameraControlItem { Content = "关闭视频流",  Command = TurnOffVideoCommand }
-            };
             ConnectCommand = new AsyncRelayCommand(Connect, CanConnect);
             DisConnectCommand = new AsyncRelayCommand(DisConnect, CanDisConnect);
             DeviceInfo = new TcpDeviceinfo();
