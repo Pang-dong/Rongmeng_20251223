@@ -59,7 +59,7 @@
 
         <GroupBox Header="图像预览" Grid.Column="1" Grid.Row="0" Margin="5,0,0,5">
             <Border BorderBrush="DarkGray" BorderThickness="1" Margin="5">
-                <Image x:Name="PreviewImage" Stretch="Uniform" Margin="5"/>
+                <Image x:Name="PreviewImage" Stretch="Uniform" Margin="5" MouseLeftButtonDown="PreviewImage_MouseLeftButtonDown" Cursor="Hand" ToolTip="双击全屏预览"/>
             </Border>
         </GroupBox>
 

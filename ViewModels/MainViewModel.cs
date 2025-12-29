@@ -190,8 +190,6 @@ namespace Rongmeng_20251223.ViewModels
                         {
                             Content = item.Title,
                             ConfigData = item,
-                            // 【简洁代码】直接使用 Lambda 表达式绑定执行逻辑
-                            // 注意：这里用了 AsyncRelayCommand 因为 RunGenericTest 是异步的(有延时)
                             Command = new AsyncRelayCommand(async () => await RunGenericTest(item))
                         };
                         CameraControls.Add(btn);

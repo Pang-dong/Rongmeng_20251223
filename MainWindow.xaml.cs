@@ -34,6 +34,7 @@ namespace Rongmeng_20251223
         private static readonly log4net.ILog logger = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         private ClientApi ClientApi;
         private WriteableBitmap writeable;
+        private FullScreenWindow _fullScreenWindow;
         public MainWindow(string stationName = "")
         {
             InitializeComponent();
@@ -60,7 +61,6 @@ namespace Rongmeng_20251223
                 try
                 {
                     // 1. 初始化或重建“白板”
-                    // 如果是第一次运行，或者视频分辨率变了（比如从720p变1080p），就需要重新申请一块内存
                     if (writeable == null ||
                         writeable.PixelWidth != bmp.Width ||
                         writeable.PixelHeight != bmp.Height)
@@ -68,10 +68,16 @@ namespace Rongmeng_20251223
                         writeable = new WriteableBitmap(
                             bmp.Width,
                             bmp.Height,
-                            96, 96, // DPI 设置，一般 96 即可
+                            96, 96,
                             System.Windows.Media.PixelFormats.Bgr24,
                             null);
                         PreviewImage.Source = writeable;
+
+                        // [新增] 如果全屏窗口开着，且 WriteableBitmap 重建了（例如分辨率变了），必须重新赋值给全屏窗口
+                        if (_fullScreenWindow != null)
+                        {
+                            _fullScreenWindow.UpdateImageSource(writeable);
+                        }
                     }
 
                     // 2. 锁定源数据 (System.Drawing.Bitmap)
@@ -105,6 +111,29 @@ namespace Rongmeng_20251223
         {
             LogScrollViewer.ScrollToBottom();
         }
+        private void PreviewImage_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ClickCount == 2) // 只有双击才触发
+            {
+                if (writeable == null) return; // 如果没有图像，不打开
 
+                // 防止重复打开
+                if (_fullScreenWindow == null)
+                {
+                    _fullScreenWindow = new FullScreenWindow();
+                    // 订阅关闭事件，窗口关闭后置空引用
+                    _fullScreenWindow.Closed += (s, args) => _fullScreenWindow = null;
+
+                    // 传入当前的图像源
+                    _fullScreenWindow.UpdateImageSource(writeable);
+
+                    _fullScreenWindow.Show();
+                }
+                else
+                {
+                    _fullScreenWindow.Activate(); // 如果已打开，则激活到前台
+                }
+            }
+        }
     }
 }
