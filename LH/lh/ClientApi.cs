@@ -68,20 +68,17 @@ namespace Rongmeng_20251223.LH
         {
             String ip = "";
             try { ip = client.RemoteEndPoint.ToString(); } catch { }
-            byte[] recvBuffer = new byte[1024 * 64];
+            byte[] recvBuffer = new byte[1024 * 24];
 
             while (true)
             {
                 try
                 {
-                    // --- A. 接收数据 ---
                     int r = client.Receive(recvBuffer);
                     if (r == 0) break; // 连接断开
                     _msBuffer.Seek(0, SeekOrigin.End);
                     _msBuffer.Write(recvBuffer, 0, r);
-
-                    // --- C. 尝试解析 (循环处理，防止一次收到多包) ---
-                    ParseLoop(ip);
+                    ParseLoop();
                 }
                 catch (Exception ex)
                 {
@@ -238,7 +235,7 @@ namespace Rongmeng_20251223.LH
                 manualResetEvent.Set();
             }
         }
-        private void ParseLoop(string ip)
+        private void ParseLoop()
         {
             while (_msBuffer.Length > 0)
             {
