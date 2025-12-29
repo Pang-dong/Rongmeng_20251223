@@ -160,7 +160,7 @@ namespace Rongmeng_20251223.ViewModels
         {
             Application.Current.Dispatcher.Invoke(() =>
             {
-                MainWindow mainWin = new MainWindow();
+                MainWindow mainWin = new MainWindow(SelectedStation);
                 mainWin.Show();
                 CloseAction?.Invoke();
             });

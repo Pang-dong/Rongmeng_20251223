@@ -34,11 +34,14 @@ namespace Rongmeng_20251223
         private static readonly log4net.ILog logger = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         private ClientApi ClientApi;
         private WriteableBitmap writeable;
-        public MainWindow()
+        public MainWindow(string stationName = "")
         {
             InitializeComponent();
             ClientApi myApi = ClientApi.BuildClient(this);
-            this.DataContext = new MainViewModel(myApi);
+
+            // 传给 ViewModel
+            this.DataContext = new MainViewModel(myApi, stationName);
+
             FFmpegDecoder.Instance.Initialize(1920, 1080, VideoFormat.H264);
         }
 

@@ -9,10 +9,11 @@ namespace Rongmeng_20251223.Interface.Model
 {
     public class CameraControlItem
     {
-        // 按钮显示的文字
         public string Content { get; set; } = string.Empty;
 
-        // 按钮绑定的具体命令
         public IRelayCommand Command { get; set; }
+
+        // 保存配置数据，供自动化测试流程读取
+        public StationTestItem ConfigData { get; set; }
     }
 }

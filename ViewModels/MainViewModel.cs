@@ -18,6 +18,8 @@ using System.Windows.Markup;
 using RestSharp;
 using Rongmeng_20251223.Service;
 using FFmpeg.AutoGen;
+using Newtonsoft.Json;
+using System.IO;
 
 namespace Rongmeng_20251223.ViewModels
 {
@@ -111,7 +113,7 @@ namespace Rongmeng_20251223.ViewModels
         public IRelayCommand TurnOffVideoCommand { get; }
         public IAsyncRelayCommand DisConnectCommand { get; }
 
-        public MainViewModel(ClientApi api)
+        public MainViewModel(ClientApi api,string stationName)
         {
             // 2. 在构造函数里初始化命令
             AuthorizeCommand = new RelayCommand(Authorize);
@@ -122,6 +124,7 @@ namespace Rongmeng_20251223.ViewModels
             TurnOffVideoCommand = new RelayCommand(TurnOffVideo);
             StartAutoTestCommand = new AsyncRelayCommand(RunAutoTestSequence);
             UserJudgmentCommand = new RelayCommand<string>(OnUserJudgmentReceived);
+            LoadConfigAndInitButtons(stationName);
             this.lHviedoApi = api;
             WeakReferenceMessenger.Default.Register<Messages>(this, (r, m) =>
             {
@@ -154,30 +157,125 @@ namespace Rongmeng_20251223.ViewModels
             DeviceInfo = new TcpDeviceinfo();
         }
 
-        private async Task RunAutoTestSequence()
+        /// <summary>
+        /// 从 JSON 文件加载配置并生成按钮
+        /// </summary>
+        private void LoadConfigAndInitButtons(string currentStation)
         {
-            if (IsAutoTesting) return;
+            CameraControls.Clear();
 
-            if (lHviedoApi == null)
+            // 1. 拼接路径: 执行目录/Chinese/StationConfig.json
+            string configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Chinese", "StationConfig.json");
+
+            if (!File.Exists(configPath))
             {
-                MessageBox.Show("请先连接设备！", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                AddLog($"[错误] 未找到配置文件: {configPath}");
                 return;
             }
 
             try
             {
-                IsAutoTesting = true; // 【关键】显示判定框
-                AddLog(">>>>>> 开启自动化检测流程 <<<<<<");
+                // 2. 读取并反序列化
+                string json = File.ReadAllText(configPath);
+                var allItems = JsonConvert.DeserializeObject<List<StationTestItem>>(json);
 
-                await Task.Delay(300);
+                if (allItems == null) return;
+
+                // 3. 遍历生成按钮 (使用 Lambda 闭包捕获 item)
+                foreach (var item in allItems)
+                {
+                    if (item.Station == currentStation)
+                    {
+                        var btn = new CameraControlItem
+                        {
+                            Content = item.Title,
+                            ConfigData = item,
+                            // 【简洁代码】直接使用 Lambda 表达式绑定执行逻辑
+                            // 注意：这里用了 AsyncRelayCommand 因为 RunGenericTest 是异步的(有延时)
+                            Command = new AsyncRelayCommand(async () => await RunGenericTest(item))
+                        };
+                        CameraControls.Add(btn);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                AddLog($"加载配置失败: {ex.Message}");
+            }
+        }
+        /// <summary>
+        /// 通用的测试执行逻辑：发指令 + 提示 + 防呆延时
+        /// </summary>
+        private async Task RunGenericTest(StationTestItem item)
+        {
+            if (lHviedoApi == null)
+            {
+                MessageBox.Show("请先连接设备！");
+                return;
+            }
+
+            try
+            {
+                // 1. 设置界面提示
+                CurrentTestItemName = item.Title;
+                CurrentTestPrompt = item.Tips;
+                AddLog($"执行: {item.Title}");
+
+                // 2. 解析并发送指令 (Hex String -> UInt16)
+                ushort cmdId = Convert.ToUInt16(item.Command, 16);
+                CommandType type = (CommandType)cmdId;
+
+                // 简单指令直接发送，特殊指令(如鉴权)可在此处加 if 判断
+                IDocommand docommand = SelectFactory.CreateDocomandIntArray(MessageTypes.Command, type);
+                lHviedoApi.Send(docommand);
+
+                // 3. 防呆倒计时 (Timeout)
+                if (item.Timeout > 0)
+                {
+                    string originalTips = item.Tips;
+                    for (int i = item.Timeout; i > 0; i--)
+                    {
+                        CurrentTestPrompt = $"{originalTips} (请等待 {i} 秒...)";
+                        await Task.Delay(1000);
+                    }
+                    CurrentTestPrompt = $"{originalTips} (执行完成)";
+                }
+            }
+            catch (Exception ex)
+            {
+                AddLog($"执行异常: {ex.Message}");
+                CurrentTestPrompt = "指令发送失败";
+            }
+        }
+
+        private async Task RunAutoTestSequence()
+        {
+            if (IsAutoTesting) return;
+            if (lHviedoApi == null)
+            {
+                MessageBox.Show("请先连接设备！");
+                return;
+            }
+
+            // 1. 定义结果字典
+            Dictionary<string, string> results = new Dictionary<string, string>();
+
+            try
+            {
+                IsAutoTesting = true;
+                AddLog(">>>>>> 开启自动化检测流程 <<<<<<");
 
                 foreach (var step in CameraControls)
                 {
-                    CurrentTestItemName = step.Content;
-                    CurrentTestPrompt = $"正在执行 [{step.Content}]，请观察现象...";
+                    StationTestItem config = step.ConfigData;
 
-                    // 4. 【关键修改】在循环内部捕获命令异常
-                    // 这样即使“摄像头授权”失败了，程序也不会崩，而是让你点 FAIL
+                    // 2. 设置提示信息
+                    CurrentTestItemName = step.Content;
+                    CurrentTestPrompt = string.IsNullOrEmpty(config?.Tips)
+                                        ? $"正在执行 [{step.Content}]..."
+                                        : config.Tips;
+
+                    // 3. 执行指令
                     try
                     {
                         if (step.Command.CanExecute(null))
@@ -187,36 +285,71 @@ namespace Rongmeng_20251223.ViewModels
                     }
                     catch (Exception cmdEx)
                     {
-                        AddLog($"[警告] 指令发送异常: {cmdEx.Message}");
-                        CurrentTestPrompt = "指令发送失败！请检查连接，或直接判定为 FAIL。";
+                        AddLog($"[异常] {cmdEx.Message}");
                     }
+
+                    // 4. 防呆倒计时
+                    int waitTime = config != null ? config.Timeout : 0;
+                    if (waitTime > 0)
+                    {
+                        string basePrompt = CurrentTestPrompt;
+                        for (int i = waitTime; i > 0; i--)
+                        {
+                            CurrentTestPrompt = $"{basePrompt} (锁定 {i}秒)";
+                            await Task.Delay(1000);
+                        }
+                        CurrentTestPrompt = basePrompt + " (请判定)";
+                    }
+
+                    // 5. 等待用户判定 (Pass/Fail)
                     _userInputSignal = new TaskCompletionSource<bool>();
                     bool isPass = await _userInputSignal.Task;
 
-                    // 6. 处理判定结果
-                    if (isPass)
+                    // 6. 记录结果 (Pass=1, Fail=0)
+                    if (config != null && !string.IsNullOrEmpty(config.MesName))
                     {
-                        AddLog($"[PASS] {step.Content} -> 合格");
+                        results[config.MesName] = isPass ? "1" : "0";
+                    }
+
+                    if (!isPass)
+                    {
+                        AddLog($"[FAIL] {step.Content} -> 不合格");
+                        MessageBox.Show($"测试在步骤 [{step.Content}] 失败！", "测试不合格", MessageBoxButton.OK, MessageBoxImage.Error);
+                        // 失败后立即生成结果并退出
+                        GenerateAndLogResult(results);
+                        return;
                     }
                     else
                     {
-                        AddLog($"[FAIL] {step.Content} -> 不合格，测试终止。");
-                        MessageBox.Show($"测试在步骤 [{step.Content}] 失败！", "测试不合格", MessageBoxButton.OK, MessageBoxImage.Error);
-                        return;
+                        AddLog($"[PASS] {step.Content} -> 合格");
                     }
 
-                    // 步骤间稍微停顿，体验更好
+                    // 步骤间缓冲
                     await Task.Delay(200);
                 }
+
+                // 全部通过
+                AddLog("所有测试项通过！");
+                GenerateAndLogResult(results);
             }
             catch (Exception ex)
             {
                 AddLog($"流程异常中断: {ex.Message}");
-                MessageBox.Show($"发生错误: {ex.Message}");
             }
             finally
             {
                 IsAutoTesting = false;
+                CurrentTestPrompt = "测试结束";
+            }
+        }
+        private void GenerateAndLogResult(Dictionary<string, string> results)
+        {
+            if (results.Count > 0)
+            {
+                string jsonResult = JsonConvert.SerializeObject(results, Formatting.None);
+                AddLog("--------------------------------");
+                AddLog($"[最终结果JSON]: {jsonResult}");
+                AddLog("--------------------------------");
             }
         }
 
