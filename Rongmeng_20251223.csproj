@@ -75,6 +75,7 @@
     </Compile>
     <Compile Include="Interface\ILHviedoApiCallBack.cs" />
     <Compile Include="Interface\Model\AppConfig.cs" />
+    <Compile Include="Interface\Model\InvokeMESInterfaceHttp.cs" />
     <Compile Include="Interface\Model\MessageICommand.cs" />
     <Compile Include="Interface\Model\Messages.cs" />
     <Compile Include="Interface\Model\StationTestItem.cs" />

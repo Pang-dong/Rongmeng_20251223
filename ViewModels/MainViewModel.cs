@@ -118,7 +118,7 @@ namespace Rongmeng_20251223.ViewModels
             CameraControls = new ObservableCollection<CameraControlItem>();
             // 2. 在构造函数里初始化命令
             AuthorizeCommand = new RelayCommand(Authorize);
-            RebootCommand = new RelayCommand(Reboot);
+            //RebootCommand = new RelayCommand(Reboot);
             TurnOnLedCommand = new RelayCommand(TurnOnLed);
             TurnOffLedCommand = new RelayCommand(TurnOffLed);
             TurnOnVideoCommand = new RelayCommand(TurnOnVideo);
@@ -225,11 +225,9 @@ namespace Rongmeng_20251223.ViewModels
                         // 使用 CreateDocomandInt 发送带整数参数的包
                         docommand = SelectFactory.CreateDocomandInt(MessageTypes.Command, type, intVal);
                         break;
-
                     case "string":
                         docommand = SelectFactory.CreateDocomandStringAnd(MessageTypes.Command, type, item.ParamValue);
                         break;
-
                     case "none":
                     default:
                         docommand = SelectFactory.CreateDocomandIntArray(MessageTypes.Command, type);
@@ -366,7 +364,10 @@ namespace Rongmeng_20251223.ViewModels
         {
             _userInputSignal?.TrySetResult(result == "PASS");
         }
-
+        /// <summary>
+        /// 消息分流后处理响应
+        /// </summary>
+        /// <param name="responseFrame"></param>
         private void ProcessResponse(IDocommand responseFrame)
         {
             if (responseFrame.CommandType == null || responseFrame.CommandType.Length < 2)
@@ -434,7 +435,6 @@ namespace Rongmeng_20251223.ViewModels
                         }
                     break;
             }
-
         }
 
         private void Authorize()
