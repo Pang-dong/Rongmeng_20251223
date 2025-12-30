@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:hc="https://handyorg.github.io/handycontrol"
         xmlns:local="clr-namespace:Rongmeng_20251223"
         mc:Ignorable="d"
         Title="融梦x5控制应用程序" Height="720" Width="970" MinHeight="600" MinWidth="800">
@@ -46,7 +47,7 @@
                 <ListBox x:Name="CameraControlListBox" BorderThickness="0" Background="Transparent" ItemsSource="{Binding CameraControls}" MaxHeight="300">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <Button Content="{Binding Content}" Command="{Binding Command}" Height="30" Margin="0,2"/>
+                            <Button Content="{Binding Content}" Command="{Binding Command}" Height="30" Margin="0,2" Style="{StaticResource ButtonPrimary}" hc:BorderElement.CornerRadius="4" />
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
@@ -78,9 +79,9 @@
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Content="FAIL (不合格)" Command="{Binding UserJudgmentCommand}" CommandParameter="FAIL"
+                    <Button Content="FAIL (不合格)" Command="{Binding UserJudgmentCommand}" CommandParameter="FAIL" Style="{StaticResource ButtonPrimary}"
                             Background="#FFB6B6" Foreground="DarkRed" FontWeight="Bold" Width="120" Height="60" Margin="10"/>
-                    <Button Content="PASS (合格)" Command="{Binding UserJudgmentCommand}" CommandParameter="PASS"
+                    <Button Content="PASS (合格)" Command="{Binding UserJudgmentCommand}" CommandParameter="PASS" Style="{StaticResource ButtonPrimary}"
                             Background="#B6FFB6" Foreground="DarkGreen" FontWeight="Bold" Width="120" Height="60" Margin="10"/>
                 </StackPanel>
             </Grid>
