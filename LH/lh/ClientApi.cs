@@ -167,6 +167,7 @@ namespace Rongmeng_20251223.LH
             {
                 try
                 {
+                    // 1. 积压处理逻辑
                     if (queuFrames.Count > 3)
                     {
                         lock (queuFrames)
@@ -179,25 +180,58 @@ namespace Rongmeng_20251223.LH
 
                     if (queuFrames.Count <= 0)
                     {
-                        Thread.Sleep(1); // 避免空转占用 CPU
+                        Thread.Sleep(1);
                         continue;
                     }
+
+                    // 2. 取出帧
                     frame = queuFrames.Dequeue();
+
                     if (frame != null)
                     {
-                        using (Bitmap image = FFmpegDecoder.Instance.DecodeFrameToBitmap(frame.PlayLoad))
+                        if (frame.PlayLoad == null || frame.PlayLoad.Length == 0)
                         {
-                            if (image != null)
+                            logger.Warn("接收到空帧数据 (PlayLoad is null or empty)，跳过解码");
+                            frame = null;
+                            continue;
+                        }
+                        if (FFmpegDecoder.Instance == null)
+                        {
+                            logger.Error("FFmpegDecoder 未初始化 (Instance is null)！请检查程序启动时是否初始化了解码器。");
+                            Thread.Sleep(100);
+                            continue;
+                        }
+
+                        try
+                        {
+                            using (Bitmap image = FFmpegDecoder.Instance.DecodeFrameToBitmap(frame.PlayLoad))
                             {
-                                lHviedoApiCallBack.GetBitmapImg(image);
+                                if (image != null)
+                                {
+                                    if (lHviedoApiCallBack != null)
+                                    {
+                                        lHviedoApiCallBack.GetBitmapImg(image);
+                                    }
+                                    else
+                                    {
+                                        logger.Warn("回调接口 lHviedoApiCallBack 为 null");
+                                    }
+                                }
                             }
                         }
+                        catch (Exception decodeEx)
+                        {
+                            logger.Error("解码过程内部发生错误: " + decodeEx.ToString());
+                        }
+                        // === 新增修复逻辑结束 ===
+
                         frame = null;
                     }
                 }
                 catch (Exception ex)
                 {
-                    logger.Error("解码线程异常: " + ex.Message);
+                    logger.Error("解码线程通用异常: " + ex.Message);
+                    Thread.Sleep(10); // 避免死循环狂刷日志
                 }
             }
         }
