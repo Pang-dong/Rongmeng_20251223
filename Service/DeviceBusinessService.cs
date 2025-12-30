@@ -32,7 +32,6 @@ namespace Rongmeng_20251223.Service
         public void Connect(TcpDeviceinfo info) => _api.Connect(info);
         public void Disconnect() => _api.DisConnect();
 
-        // 封装具体的业务指令，VM 只需要调用这些语义化的方法
         public void Reboot() => SendCommand(CommandType.Reboot);
         public void SetLed(bool isOn) => SendCommand(isOn ? CommandType.EnableLed : CommandType.DisableLed, 0);
         public void ControlVideo(bool isStart) => SendCommand(isStart ? CommandType.StartVideo : CommandType.StopVideo);
@@ -70,7 +69,6 @@ namespace Rongmeng_20251223.Service
             _api.Send(cmd);
         }
 
-        // 【核心】原 ViewModel 中的 ProcessResponse 逻辑移到这里
         private void ProcessBusinessLogic(IDocommand response)
         {
             ushort cmdId = BitConverter.ToUInt16(response.CommandType, 0);
@@ -80,8 +78,6 @@ namespace Rongmeng_20251223.Service
                 Log($"[失败] 命令 {type} 执行失败，错误码: {response.ResponseStatus:X2}");
                 return;
             }
-
-            // 处理特定业务
             switch (type)
             {
                 case CommandType.GetUid:

@@ -159,8 +159,7 @@ namespace Rongmeng_20251223.ViewModels
                     var result = JsonConvert.DeserializeObject<BaseResult>(jsonStr);
                     if (result != null && result.IsSuccess)
                     {
-                        SaveConfig(password);
-                        OpenMainWindow();
+
                     }
                     else
                     {
@@ -176,6 +175,8 @@ namespace Rongmeng_20251223.ViewModels
                     return;
                 }
             }
+            SaveConfig(password);
+            OpenMainWindow();
         }
 
         private void SaveConfig(string password)

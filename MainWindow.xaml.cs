@@ -111,6 +111,11 @@ namespace Rongmeng_20251223
         {
             LogScrollViewer.ScrollToBottom();
         }
+        /// <summary>
+        /// 双击放大图像方法
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void PreviewImage_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (e.ClickCount == 2) // 只有双击才触发

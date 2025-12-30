@@ -108,8 +108,6 @@ namespace Rongmeng_20251223.ViewModels
 
         public MainViewModel(ClientApi api, string stationName)
         {
-            // [新增] 初始化服务
-            // 以后所有“脏活累活”都交给这两个小弟去做
             _deviceService = new DeviceBusinessService(api);
             _configService = new StationConfigService();
 
@@ -128,7 +126,7 @@ namespace Rongmeng_20251223.ViewModels
             ConnectCommand = new AsyncRelayCommand(Connect, CanConnect);
             DisConnectCommand = new AsyncRelayCommand(DisConnect, CanDisConnect);
 
-            LoadButtons(stationName);
+            LoadButtons(stationName);//分配按钮命令对象
 
             WeakReferenceMessenger.Default.Register<Messages>(this, (r, m) =>
             {
