@@ -9,79 +9,58 @@ using System.Xml.Linq;
 
 namespace Rongmeng_20251223.Interface.Model
 {
-    public static class InvokeMESInterfaceHttp
+    public static class InvokeMESInterface
     {
-        // 复用 HttpClient 实例，避免端口耗尽
+        // 复用 HttpClient，避免端口耗尽
         private static readonly HttpClient _httpClient = new HttpClient();
 
         /// <summary>
-        /// 新的接口调用方法
-        /// 建议将 args 改为 Dictionary<string, object> 以便匹配参数名
+        /// 通用 MES 接口调用方法 (支持任意方法、任意参数)
         /// </summary>
-        public static string MESInterface(string methodName, Dictionary<string, object> parameters)
+        /// <param name="url">完整接口地址 (如 http://192.168.1.100:8017/Service.asmx)</param>
+        /// <param name="methodName">方法名 (如 GetUserLoginInfo)</param>
+        /// <param name="parameters">参数字典</param>
+        /// <param name="soapNamespace">命名空间 (默认为 http://tempuri.org/)</param>
+        /// <returns>返回接口结果字符串</returns>
+        public static async Task<string> PostToMesAsync(
+            string url,
+            string methodName,
+            Dictionary<string, object> parameters,
+            string soapNamespace = "http://tempuri.org/")
         {
-            // 这里为了保持和你原有代码签名一致的返回逻辑，我们做个同步包装
-            // 实际项目中建议一路 async/await
-            return Task.Run(() => CallSoapServiceAsync(methodName, parameters)).GetAwaiter().GetResult();
-        }
-
-        private static async Task<string> CallSoapServiceAsync(string methodName, Dictionary<string, object> parameters)
-        {
-            string ip = ""; // 假设这是你项目里能获取到的IP
-            string url = $"http://{ip}:8017/Service.asmx";
-
-            string soapNamespace = "http://tempuri.org/";
-
             try
             {
-                // 1. 构建 SOAP XML 包体
+                _httpClient.Timeout = TimeSpan.FromSeconds(3);
                 string soapBody = BuildSoapEnvelope(methodName, parameters, soapNamespace);
                 var content = new StringContent(soapBody, Encoding.UTF8, "text/xml");
-
-                // 2. 添加 SOAPAction 头 (ASMX 通常需要)
-                if (!_httpClient.DefaultRequestHeaders.Contains("SOAPAction"))
-                {
-                    _httpClient.DefaultRequestHeaders.Add("SOAPAction", $"{soapNamespace}{methodName}");
-                }
-                // 注意：HttpClient 是单例，Header 可能会累积，严谨做法是每次 Request Message 单独设置 Header
-                // 这里为了简化演示，使用 HttpRequestMessage 会更好：
                 using (var request = new HttpRequestMessage(HttpMethod.Post, url))
                 {
                     request.Headers.Add("SOAPAction", $"{soapNamespace}{methodName}");
                     request.Content = content;
 
-                    // 3. 发送请求
+                    // 4. 发送并等待结果
                     using (var response = await _httpClient.SendAsync(request))
                     {
-                        // 4. 读取响应
                         string responseString = await response.Content.ReadAsStringAsync();
 
                         if (!response.IsSuccessStatusCode)
                         {
-                            throw new Exception($"HTTP Error {response.StatusCode}: {responseString}");
+                            return $"ERROR: HTTP {response.StatusCode} - {responseString}";
                         }
 
-                        // 5. 解析 XML 结果
+                        // 5. 解析 XML 返回值
                         return ParseSoapResponse(responseString, methodName, soapNamespace);
                     }
                 }
             }
             catch (Exception ex)
             {
-                // 保持原有的错误返回格式
-                var productInfo = new
-                {
-                    SNCount = 0,
-                    SNStatus = "接口调用错误",
-                    msg = ex.Message,
-                    SNCodeInfo = new List<object>(), // 使用 object 或你原本的 DeviceInfo
-                };
-                return JsonConvert.SerializeObject(productInfo);
+                return $"ERROR: 接口异常 - {ex.Message}";
             }
         }
 
         /// <summary>
-        /// 构建 SOAP XML 字符串
+        /// 构造 SOAP XML 字符串
         /// </summary>
         private static string BuildSoapEnvelope(string methodName, Dictionary<string, object> args, string ns)
         {
@@ -90,14 +69,15 @@ namespace Rongmeng_20251223.Interface.Model
             sb.Append("<soap:Envelope xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">");
             sb.Append("<soap:Body>");
 
-            // 方法名
+            // 方法名节点
             sb.Append($"<{methodName} xmlns=\"{ns}\">");
 
-            // 参数列表
+            // 参数节点
             if (args != null)
             {
                 foreach (var kvp in args)
                 {
+                    // 注意：这里直接使用 Key 作为标签名，确保传入的 Key 与 WSDL 定义一致
                     sb.Append($"<{kvp.Key}>{kvp.Value}</{kvp.Key}>");
                 }
             }
@@ -109,33 +89,20 @@ namespace Rongmeng_20251223.Interface.Model
         }
 
         /// <summary>
-        /// 解析 SOAP XML 返回值
+        /// 解析 SOAP XML 响应
         /// </summary>
         private static string ParseSoapResponse(string xml, string methodName, string ns)
         {
             try
             {
                 XDocument doc = XDocument.Parse(xml);
-                XNamespace soap = "http://schemas.xmlsoap.org/soap/envelope/";
-                XNamespace serviceNs = ns;
-
-                // ASMX 默认返回结果标签为：方法名 + Result
                 string resultNodeName = methodName + "Result";
-
-                var resultNode = doc.Descendants(serviceNs + resultNodeName).FirstOrDefault();
-
-                // 如果找不到带 namespace 的节点，尝试不带 namespace 查找
-                if (resultNode == null)
-                {
-                    resultNode = doc.Descendants().FirstOrDefault(n => n.Name.LocalName == resultNodeName);
-                }
-
+                var resultNode = doc.Descendants().FirstOrDefault(n => n.Name.LocalName == resultNodeName);
                 return resultNode?.Value ?? "";
             }
-            catch
+            catch (Exception ex)
             {
-                // 如果解析 XML 失败，直接返回原始内容用于调试
-                return xml;
+                return $"ERROR: XML解析失败 - {ex.Message}";
             }
         }
     }

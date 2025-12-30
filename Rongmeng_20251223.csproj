@@ -83,6 +83,7 @@
     <Compile Include="LH\lh\ConfigManager.cs" />
     <Compile Include="LH\lh\LicenseService.cs" />
     <Compile Include="LH\lh\MessageType.cs" />
+    <Compile Include="LH\lh\ReturnResult.cs" />
     <Compile Include="LH\lh\TcpDeviceinfo.cs" />
     <Compile Include="LoginWindow.xaml.cs">
       <DependentUpon>LoginWindow.xaml</DependentUpon>
