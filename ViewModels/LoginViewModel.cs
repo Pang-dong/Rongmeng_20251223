@@ -142,7 +142,6 @@ namespace Rongmeng_20251223.ViewModels
                         { "_password", password }
                     };
                     string url = $"http://{FtpIp}:8017/Service.asmx";
-                    // 1. 调用接口（底层用 XDocument 拆包，返回 JSON 字符串）
                     string jsonStr = await InvokeMESInterface.PostToMesAsync(url, "GetUserLoginInfo", args);
 
                     if (string.IsNullOrEmpty(jsonStr) || jsonStr.Contains("ERROR"))
