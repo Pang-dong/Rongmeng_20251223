@@ -6,96 +6,216 @@
         xmlns:hc="https://handyorg.github.io/handycontrol"
         xmlns:local="clr-namespace:Rongmeng_20251223"
         mc:Ignorable="d"
-        Title="融梦x5控制应用程序" Height="720" Width="970" MinHeight="600" MinWidth="800">
+        Background="#F5F6F8"
+        Title="LH-Rongmeng" Height="760" Width="1080" MinHeight="600" MinWidth="900"
+        WindowStartupLocation="CenterScreen">
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+
+        <Style x:Key="CardStyle" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="15"/>
+            <Setter Property="Margin" Value="0,0,0,15"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect Color="#D0D0D0" BlurRadius="10" ShadowDepth="0" Opacity="0.4"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SectionTitle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#222222"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+        </Style>
+        <Style x:Key="DarkToolTipStyle" TargetType="ToolTip">
+            <Setter Property="Background" Value="#CC000000"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToolTip">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="4"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
-    <Grid Margin="10">
+    <Grid Margin="15">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="220"/>
+            <ColumnDefinition Width="260"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="180"/>
-        </Grid.RowDefinitions>
+        <Border Grid.Column="0" Style="{StaticResource CardStyle}" Margin="0,0,15,0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-        <StackPanel Grid.Column="0" Grid.Row="0" Grid.RowSpan="3" Margin="0,0,10,0">
-            <GroupBox Header="连接设置" Margin="0,0,0,10">
-                <StackPanel>
-                    <Label Content="IP地址：" Margin="0,5,0,0"/>
-                    <TextBox Text="{Binding DeviceInfo.IPAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="24" Margin="0,0,0,5"/>
-                    <Label Content="端口号：" Margin="0,5,0,0"/>
-                    <TextBox Text="{Binding DeviceInfo.Port, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="24" Margin="0,0,0,5"/>
-                    <Button Content="{Binding ConnectButtonText}" Command="{Binding ConnectCommand}" Height="30" Margin="0,0,0,5"/>
-                    <Button Content="{Binding DisConnectButtonText}" Command="{Binding DisConnectCommand}" Height="30" Margin="0,0,0,5"/>
-                </StackPanel>
-            </GroupBox>
+                <StackPanel Grid.Row="0">
+                    <TextBlock Text="设备连接配置" Style="{StaticResource SectionTitle}"/>
 
-            <GroupBox Header="自动化流程" Margin="0,0,0,10" BorderBrush="Orange" BorderThickness="2">
-                <StackPanel>
-                    <Button Content="开始自动化测试" Command="{Binding StartAutoTestCommand}" 
-                            Height="45" FontWeight="Bold" Background="Orange" Foreground="White" Margin="5"/>
-                </StackPanel>
-            </GroupBox>
+                    <DockPanel LastChildFill="True" Margin="0,0,0,8">
+                        <Label Content="IP地址" Width="60" Padding="0,5,0,0" Foreground="#333333" FontWeight="SemiBold"/>
 
-            <GroupBox Header="相机控制(手动)" Margin="0,0,0,10">
-                <ListBox x:Name="CameraControlListBox" BorderThickness="0" Background="Transparent" ItemsSource="{Binding CameraControls}" MaxHeight="300">
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <Button Content="{Binding Content}" Command="{Binding Command}" Height="30" Margin="0,2" Style="{StaticResource ButtonPrimary}" hc:BorderElement.CornerRadius="4" />
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
-            </GroupBox>
+                        <TextBox Text="{Binding DeviceInfo.IPAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="30" Foreground="Black" CaretBrush="Black"/>
+                    </DockPanel>
 
-            <GroupBox Header="图像操作" Margin="0,0,0,10">
-                <Button Content="保存图片" Height="30" Margin="0,5" Click="SavePictureButton_Click"/>
-            </GroupBox>
-        </StackPanel>
+                    <DockPanel LastChildFill="True" Margin="0,0,0,12">
+                        <Label Content="端口号" Width="60" Padding="0,5,0,0" Foreground="#333333" FontWeight="SemiBold"/>
 
-        <GroupBox Header="图像预览" Grid.Column="1" Grid.Row="0" Margin="5,0,0,5">
-            <Border BorderBrush="DarkGray" BorderThickness="1" Margin="5">
-                <Image x:Name="PreviewImage" Stretch="Uniform" Margin="5" MouseLeftButtonDown="PreviewImage_MouseLeftButtonDown" Cursor="Hand" ToolTip="双击全屏预览"/>
-            </Border>
-        </GroupBox>
+                        <TextBox Text="{Binding DeviceInfo.Port, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="30" Foreground="Black" CaretBrush="Black"/>
+                    </DockPanel>
 
-        <GroupBox Grid.Column="1" Grid.Row="1" Header="自动化测试判定 (请操作)" Margin="5,5,0,5"  MinHeight="120"
-                  BorderBrush="#007ACC" BorderThickness="2"
-                  Visibility="{Binding IsAutoTesting, Converter={StaticResource BooleanToVisibilityConverter}}">
-            <Grid Background="#F0F8FF" Margin="5">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+                    <Button Content="{Binding ConnectButtonText}" Command="{Binding ConnectCommand}" 
+        Style="{StaticResource ButtonPrimary}" 
+        HorizontalAlignment="Stretch"
+        Height="40" 
+        Margin="0,0,0,10"/>
 
-                <StackPanel VerticalAlignment="Center" Margin="15,10">
-                    <TextBlock Text="{Binding CurrentTestItemName}" FontSize="26" FontWeight="Bold" Foreground="#007ACC"/>
-                    <TextBlock Text="{Binding CurrentTestPrompt}" FontSize="14" Foreground="DarkRed" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                    <Button Content="{Binding DisConnectButtonText}" Command="{Binding DisConnectCommand}" 
+        Style="{StaticResource ButtonDanger}" 
+        HorizontalAlignment="Stretch"
+        Height="40" 
+        Margin="0,0,0,0"/>
                 </StackPanel>
 
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Content="FAIL (不合格)" Command="{Binding UserJudgmentCommand}" CommandParameter="FAIL" Style="{StaticResource ButtonPrimary}"
-                            Background="#FFB6B6" Foreground="DarkRed" FontWeight="Bold" Width="120" Height="60" Margin="10"/>
-                    <Button Content="PASS (合格)" Command="{Binding UserJudgmentCommand}" CommandParameter="PASS" Style="{StaticResource ButtonPrimary}"
-                            Background="#B6FFB6" Foreground="DarkGreen" FontWeight="Bold" Width="120" Height="60" Margin="10"/>
+                <Separator Grid.Row="1" Margin="0,15" Background="#EEE"/>
+
+                <StackPanel Grid.Row="2">
+                    <TextBlock Text="自动化流程" Style="{StaticResource SectionTitle}"/>
+                    <Button Content="启动自动测试" Command="{Binding StartAutoTestCommand}" 
+                            Height="40" Style="{StaticResource ButtonWarning}" 
+                            FontSize="14" FontWeight="Bold"
+                            HorizontalAlignment="Stretch" hc:BorderElement.CornerRadius="4"/>
                 </StackPanel>
+
+                <Separator Grid.Row="3" Margin="0,15" Background="#EEE"/>
+
+                <DockPanel Grid.Row="4">
+                    <TextBlock Text="手动控制项" DockPanel.Dock="Top" Style="{StaticResource SectionTitle}"/>
+
+                    <ListBox x:Name="CameraControlListBox" 
+                             ItemsSource="{Binding CameraControls}" 
+                             BorderThickness="0" Background="Transparent" 
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             Padding="0">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListBoxItem">
+                                            <ContentPresenter/>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter Property="Margin" Value="0,3"/>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Button Content="{Binding Content}" Command="{Binding Command}" 
+                                        Style="{StaticResource ButtonDashed}"
+                                        Height="34" HorizontalAlignment="Stretch"
+                                        hc:BorderElement.CornerRadius="4"
+                                        Foreground="#333333"/>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+
+                <Button Grid.Row="5" Content="保存当前截图" Margin="0,10,0,0" 
+                        Click="SavePictureButton_Click" Height="34"
+                        Style="{StaticResource ButtonPrimary}" HorizontalAlignment="Stretch"/>
             </Grid>
-        </GroupBox>
+        </Border>
 
-        <GroupBox Header="连接状态与日志" Grid.Column="1" Grid.Row="2" Margin="5,5,0,0">
-            <ScrollViewer VerticalScrollBarVisibility="Auto" x:Name="LogScrollViewer">
-                <TextBlock x:Name="ConnectionStatusText" 
-               Text="{Binding StatusText}" 
-               Margin="5" 
-               TextWrapping="Wrap" 
-               FontFamily="Consolas" 
-               SizeChanged="ConnectionStatusText_SizeChanged"/>
-            </ScrollViewer>
-        </GroupBox>
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="200"/>
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0" Background="#1A1A1A" CornerRadius="8" Margin="0,0,0,15" ClipToBounds="True">
+                <Grid>
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock Text="等待视频信号输入..." Foreground="#BBBBBB" FontSize="16" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                    <Image x:Name="PreviewImage" Stretch="Uniform" 
+                           MouseLeftButtonDown="PreviewImage_MouseLeftButtonDown" 
+                           Cursor="Hand">
+                        <Image.ToolTip>
+                            <ToolTip Style="{StaticResource DarkToolTipStyle}" Content="双击全屏预览"/>
+                        </Image.ToolTip>
+                    </Image>
+                    <Border Background="#99000000" HorizontalAlignment="Right" VerticalAlignment="Top" 
+                            Margin="10" CornerRadius="4" Padding="8,4">
+                        <TextBlock Text="● Live View" Foreground="White" FontSize="10" FontWeight="Bold"/>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <Border Grid.Row="1" Style="{StaticResource CardStyle}" 
+                    Visibility="{Binding IsAutoTesting, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="当前测试步骤" Foreground="#666666" FontSize="12"/>
+                        <TextBlock Text="{Binding CurrentTestItemName}" FontSize="24" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}" Margin="0,2"/>
+                        <TextBlock Text="{Binding CurrentTestPrompt}" FontSize="14" Foreground="#E53935" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Visibility="{Binding IsJudgmentButtonsVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <Button Content="FAIL / 不合格" Command="{Binding UserJudgmentCommand}" CommandParameter="FAIL" 
+                                Style="{StaticResource ButtonDanger}" Width="130" Height="45" Margin="0,0,15,0" FontSize="14" FontWeight="Bold"/>
+                        <Button Content="PASS / 合格" Command="{Binding UserJudgmentCommand}" CommandParameter="PASS" 
+                                Style="{StaticResource ButtonSuccess}" Width="130" Height="45" FontSize="14" FontWeight="Bold"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Border Grid.Row="2" Style="{StaticResource CardStyle}" Margin="0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <DockPanel LastChildFill="False">
+                        <TextBlock Text="运行日志 / System Log" Style="{StaticResource SectionTitle}" DockPanel.Dock="Left"/>
+                    </DockPanel>
+
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" x:Name="LogScrollViewer">
+                        <TextBlock x:Name="ConnectionStatusText" 
+                                   Text="{Binding StatusText}" 
+                                   FontFamily="Consolas" Foreground="#333333" 
+                                   TextWrapping="Wrap" 
+                                   SizeChanged="ConnectionStatusText_SizeChanged"/>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
     </Grid>
 </Window>

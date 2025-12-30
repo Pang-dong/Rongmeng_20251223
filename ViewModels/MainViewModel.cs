@@ -8,27 +8,22 @@ using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using Rongmeng_20251223.Interface.Model;
 using Rongmeng_20251223.LH;
-using Rongmeng_20251223.Service; // [新增] 引用 Service 命名空间
+using Rongmeng_20251223.Service;
 
 namespace Rongmeng_20251223.ViewModels
 {
     public partial class MainViewModel : ObservableObject
     {
-        // [新增] 引入业务服务，替代原来的 ClientApi 直接引用
         private readonly DeviceBusinessService _deviceService;
-
-        // [新增] 引入配置服务，替代原来的文件读取逻辑
         private readonly StationConfigService _configService;
 
         public ObservableCollection<CameraControlItem> CameraControls { get; }
 
-        // [保留] UI 状态属性
         private bool _isConnecting;
         private bool _isDisConnecting;
         private string _statusText = "系统就绪...";
         private TcpDeviceinfo _deviceInfo;
 
-        // [保留] 连接状态 (用于控制按钮是否可用)
         private bool _isConnected;
         public bool IsConnected
         {
@@ -42,7 +37,14 @@ namespace Rongmeng_20251223.ViewModels
             }
         }
 
-        // [保留] 属性定义
+        // [新增] 控制判定按钮（PASS/FAIL）是否可见
+        private bool _isJudgmentButtonsVisible;
+        public bool IsJudgmentButtonsVisible
+        {
+            get => _isJudgmentButtonsVisible;
+            set => SetProperty(ref _isJudgmentButtonsVisible, value);
+        }
+
         public string StatusText
         {
             get => _statusText;
@@ -80,10 +82,10 @@ namespace Rongmeng_20251223.ViewModels
                 }
             }
         }
+
         public string ConnectButtonText => IsConnecting ? "正在连接..." : "连接";
         public string DisConnectButtonText => IsDisConnecting ? "正在断开..." : "断开连接";
 
-        // [保留] 自动化测试相关属性
         private bool _isAutoTesting;
         public bool IsAutoTesting { get => _isAutoTesting; set => SetProperty(ref _isAutoTesting, value); }
 
@@ -126,15 +128,13 @@ namespace Rongmeng_20251223.ViewModels
             ConnectCommand = new AsyncRelayCommand(Connect, CanConnect);
             DisConnectCommand = new AsyncRelayCommand(DisConnect, CanDisConnect);
 
-            LoadButtons(stationName);//分配按钮命令对象
+            LoadButtons(stationName);
 
             WeakReferenceMessenger.Default.Register<Messages>(this, (r, m) =>
             {
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     AddLog(m.Value);
-
-                    // 自动更新连接状态
                     if (m.Value.Contains("连接成功")) IsConnected = true;
                     else if (m.Value.Contains("已断开") || m.Value.Contains("连接失败")) IsConnected = false;
                 });
@@ -166,6 +166,7 @@ namespace Rongmeng_20251223.ViewModels
                 AddLog($"[配置加载失败] {ex.Message}");
             }
         }
+
         private async Task RunGenericTest(StationTestItem item)
         {
             if (!IsConnected)
@@ -175,7 +176,6 @@ namespace Rongmeng_20251223.ViewModels
             }
             try
             {
-                // UI 逻辑：设置提示文字
                 CurrentTestItemName = item.Title;
                 CurrentTestPrompt = item.Tips;
                 AddLog($"执行: {item.Title}");
@@ -208,7 +208,6 @@ namespace Rongmeng_20251223.ViewModels
             finally { IsConnecting = false; }
         }
 
-        // [修改] 断开方法：调用 Service
         private async Task DisConnect()
         {
             try
@@ -219,7 +218,8 @@ namespace Rongmeng_20251223.ViewModels
             finally { IsDisConnecting = false; }
         }
 
-        private bool CanConnect() => !IsConnecting;
+        // [修改] 连接条件：正在连接时不可点，且已经连接成功后也不可点
+        private bool CanConnect() => !IsConnecting && !IsConnected;
         private bool CanDisConnect() => !IsDisConnecting;
 
         private void RefreshAllCommands()
@@ -235,6 +235,8 @@ namespace Rongmeng_20251223.ViewModels
             TurnOffLedCommand.NotifyCanExecuteChanged();
             TurnOnVideoCommand.NotifyCanExecuteChanged();
             TurnOffVideoCommand.NotifyCanExecuteChanged();
+            // [新增] 刷新连接按钮状态，确保连接成功后按钮变灰
+            ConnectCommand.NotifyCanExecuteChanged();
         }
 
         public void AddLog(string message)
@@ -265,6 +267,9 @@ namespace Rongmeng_20251223.ViewModels
                     CurrentTestItemName = step.Content;
                     CurrentTestPrompt = string.IsNullOrEmpty(config?.Tips) ? $"正在执行 [{step.Content}]..." : config.Tips;
 
+                    // [关键修改] 开始执行步骤时，先隐藏按钮
+                    IsJudgmentButtonsVisible = false;
+
                     try
                     {
                         if (step.Command.CanExecute(null)) step.Command.Execute(null);
@@ -282,6 +287,14 @@ namespace Rongmeng_20251223.ViewModels
                         }
                         CurrentTestPrompt = basePrompt + " (请判定)";
                     }
+                    else
+                    {
+                        CurrentTestPrompt += " (请判定)";
+                    }
+
+                    // [关键修改] 倒计时结束后，显示按钮，等待用户操作
+                    IsJudgmentButtonsVisible = true;
+
                     _userInputSignal = new TaskCompletionSource<bool>();
                     bool isPass = await _userInputSignal.Task;
 
@@ -314,13 +327,13 @@ namespace Rongmeng_20251223.ViewModels
             finally
             {
                 IsAutoTesting = false;
+                IsJudgmentButtonsVisible = false; // 流程结束隐藏按钮
                 CurrentTestPrompt = "测试结束";
             }
         }
 
         private void GenerateAndLogResult(Dictionary<string, string> results)
         {
-            // 这里仅仅是显示结果，如果需要上传 MES，应该调用 _deviceService.UploadMes(results)
             if (results.Count > 0)
             {
                 string jsonResult = Newtonsoft.Json.JsonConvert.SerializeObject(results, Newtonsoft.Json.Formatting.None);
