@@ -51,6 +51,7 @@ namespace Rongmeng_20251223.ViewModels
             set => SetProperty(ref _statusText, value);
         }
 
+
         public TcpDeviceinfo DeviceInfo
         {
             get => _deviceInfo;
@@ -69,7 +70,6 @@ namespace Rongmeng_20251223.ViewModels
                 }
             }
         }
-
         public bool IsDisConnecting
         {
             get => _isDisConnecting;
@@ -87,7 +87,17 @@ namespace Rongmeng_20251223.ViewModels
         public string DisConnectButtonText => IsDisConnecting ? "正在断开..." : "断开连接";
 
         private bool _isAutoTesting;
-        public bool IsAutoTesting { get => _isAutoTesting; set => SetProperty(ref _isAutoTesting, value); }
+        public bool IsAutoTesting 
+        { 
+            get => _isAutoTesting; 
+            set
+            {
+                if (SetProperty(ref _isAutoTesting, value))
+                {
+                    RefreshAllCommands();
+                }
+            }
+        }
 
         private string _currentTestItemName;
         public string CurrentTestItemName { get => _currentTestItemName; set => SetProperty(ref _currentTestItemName, value); }
@@ -141,6 +151,8 @@ namespace Rongmeng_20251223.ViewModels
             });
         }
 
+        // 位置：MainViewModel.cs -> LoadButtons 方法
+
         private void LoadButtons(string stationName)
         {
             try
@@ -154,9 +166,10 @@ namespace Rongmeng_20251223.ViewModels
                     {
                         Content = item.Title,
                         ConfigData = item,
+
                         Command = new AsyncRelayCommand(
                             async () => await RunGenericTest(item),
-                            () => IsConnected
+                            () => IsConnected && !IsAutoTesting
                         )
                     });
                 }
@@ -245,6 +258,7 @@ namespace Rongmeng_20251223.ViewModels
             StatusText += logEntry;
         }
 
+        // 放在 MainViewModel.cs 中
         private async Task RunAutoTestSequence()
         {
             if (IsAutoTesting) return;
@@ -258,8 +272,11 @@ namespace Rongmeng_20251223.ViewModels
 
             try
             {
-                IsAutoTesting = true;
+                IsAutoTesting = true; // 1. 设置标志位，界面触发器会缩小日志高度，禁用手动按钮
                 AddLog(">>>>>> 开启自动化检测流程 <<<<<<");
+
+                // 2. 重置所有按钮状态（颜色恢复默认）
+                foreach (var c in CameraControls) c.TestState = 0;
 
                 foreach (var step in CameraControls)
                 {
@@ -267,15 +284,17 @@ namespace Rongmeng_20251223.ViewModels
                     CurrentTestItemName = step.Content;
                     CurrentTestPrompt = string.IsNullOrEmpty(config?.Tips) ? $"正在执行 [{step.Content}]..." : config.Tips;
 
-                    // [关键修改] 开始执行步骤时，先隐藏按钮
+                    // 隐藏判定按钮，防止误触
                     IsJudgmentButtonsVisible = false;
 
                     try
                     {
-                        if (step.Command.CanExecute(null)) step.Command.Execute(null);
+                        // 执行测试指令
+                        _deviceService.ExecuteTestItem(config);
                     }
                     catch (Exception cmdEx) { AddLog($"[异常] {cmdEx.Message}"); }
 
+                    // 倒计时逻辑
                     int waitTime = config != null ? config.Timeout : 0;
                     if (waitTime > 0)
                     {
@@ -292,12 +311,13 @@ namespace Rongmeng_20251223.ViewModels
                         CurrentTestPrompt += " (请判定)";
                     }
 
-                    // [关键修改] 倒计时结束后，显示按钮，等待用户操作
+                    // 显示判定按钮，等待用户点击
                     IsJudgmentButtonsVisible = true;
 
                     _userInputSignal = new TaskCompletionSource<bool>();
                     bool isPass = await _userInputSignal.Task;
 
+                    // 记录MES数据
                     if (config != null && !string.IsNullOrEmpty(config.MesName))
                     {
                         results[config.MesName] = isPass ? "1" : "0";
@@ -305,15 +325,18 @@ namespace Rongmeng_20251223.ViewModels
 
                     if (!isPass)
                     {
+                        step.TestState = 2; // [关键] 失败变红
                         AddLog($"[FAIL] {step.Content} -> 不合格");
                         MessageBox.Show($"测试在步骤 [{step.Content}] 失败！", "测试不合格", MessageBoxButton.OK, MessageBoxImage.Error);
                         GenerateAndLogResult(results);
-                        return;
+                        return; // 失败直接中断
                     }
                     else
                     {
+                        step.TestState = 1; // [关键] 成功变绿
                         AddLog($"[PASS] {step.Content} -> 合格");
                     }
+                    // 稍微停顿，让用户看清变绿的效果
                     await Task.Delay(200);
                 }
 
@@ -326,9 +349,10 @@ namespace Rongmeng_20251223.ViewModels
             }
             finally
             {
-                IsAutoTesting = false;
-                IsJudgmentButtonsVisible = false; // 流程结束隐藏按钮
+                IsAutoTesting = false; // 恢复状态
+                IsJudgmentButtonsVisible = false;
                 CurrentTestPrompt = "测试结束";
+                RefreshAllCommands(); // 刷新界面按钮的可用状态
             }
         }
 

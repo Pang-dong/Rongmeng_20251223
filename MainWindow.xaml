@@ -86,16 +86,16 @@
                     </DockPanel>
 
                     <Button Content="{Binding ConnectButtonText}" Command="{Binding ConnectCommand}" 
-        Style="{StaticResource ButtonPrimary}" 
-        HorizontalAlignment="Stretch"
-        Height="40" 
-        Margin="0,0,0,10"/>
+                            Style="{StaticResource ButtonPrimary}" 
+                            HorizontalAlignment="Stretch"
+                            Height="40" 
+                            Margin="0,0,0,10"/>
 
                     <Button Content="{Binding DisConnectButtonText}" Command="{Binding DisConnectCommand}" 
-        Style="{StaticResource ButtonDanger}" 
-        HorizontalAlignment="Stretch"
-        Height="40" 
-        Margin="0,0,0,0"/>
+                            Style="{StaticResource ButtonDanger}" 
+                            HorizontalAlignment="Stretch"
+                            Height="40" 
+                            Margin="0,0,0,0"/>
                 </StackPanel>
 
                 <Separator Grid.Row="1" Margin="0,15" Background="#EEE"/>
@@ -133,11 +133,28 @@
 
                         <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <Button Content="{Binding Content}" Command="{Binding Command}" 
-                                        Style="{StaticResource ButtonDashed}"
-                                        Height="34" HorizontalAlignment="Stretch"
+                                <Button Content="{Binding Content}" 
+                                        Command="{Binding Command}" 
+                                        Height="38" 
+                                        HorizontalAlignment="Stretch"
                                         hc:BorderElement.CornerRadius="4"
-                                        Foreground="#333333"/>
+                                        FontWeight="Bold"
+                                        FontSize="13">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource ButtonPrimary}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding TestState}" Value="1">
+                                                    <Setter Property="Background" Value="#4CAF50"/>
+                                                    <Setter Property="BorderBrush" Value="#4CAF50"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding TestState}" Value="2">
+                                                    <Setter Property="Background" Value="#F44336"/>
+                                                    <Setter Property="BorderBrush" Value="#F44336"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
@@ -153,7 +170,7 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="200"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
             <Border Grid.Row="0" Background="#1A1A1A" CornerRadius="8" Margin="0,0,0,15" ClipToBounds="True">
@@ -184,9 +201,10 @@
                     </Grid.ColumnDefinitions>
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="当前测试步骤" Foreground="#666666" FontSize="12"/>
-                        <TextBlock Text="{Binding CurrentTestItemName}" FontSize="24" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}" Margin="0,2"/>
-                        <TextBlock Text="{Binding CurrentTestPrompt}" FontSize="14" Foreground="#E53935" TextWrapping="Wrap"/>
+                        <TextBlock Text="{Binding CurrentTestItemName}" FontSize="18" Foreground="{StaticResource PrimaryBrush}" Margin="0,2"/>
+                        <TextBlock Text="{Binding CurrentTestPrompt}" FontSize="32" FontWeight="Bold" Foreground="#E53935" TextWrapping="Wrap" Margin="0,5,0,0"/>
                     </StackPanel>
+
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Visibility="{Binding IsJudgmentButtonsVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
                         <Button Content="FAIL / 不合格" Command="{Binding UserJudgmentCommand}" CommandParameter="FAIL" 
                                 Style="{StaticResource ButtonDanger}" Width="130" Height="45" Margin="0,0,15,0" FontSize="14" FontWeight="Bold"/>
@@ -196,7 +214,18 @@
                 </Grid>
             </Border>
 
-            <Border Grid.Row="2" Style="{StaticResource CardStyle}" Margin="0">
+            <Border Grid.Row="2" Margin="0">
+                <Border.Style>
+                    <Style TargetType="Border" BasedOn="{StaticResource CardStyle}">
+                        <Setter Property="Height" Value="200"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsAutoTesting}" Value="True">
+                                <Setter Property="Height" Value="100"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
