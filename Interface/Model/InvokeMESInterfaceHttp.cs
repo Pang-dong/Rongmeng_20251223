@@ -11,7 +11,6 @@ namespace Rongmeng_20251223.Interface.Model
 {
     public static class InvokeMESInterface
     {
-        // 复用 HttpClient，避免端口耗尽
         private static readonly HttpClient _httpClient = new HttpClient();
 
         /// <summary>

@@ -4,10 +4,11 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="系统登录" Width="380" 
+        Width="380" 
         SizeToContent="Height"
         ResizeMode="NoResize" 
         WindowStartupLocation="CenterScreen"
+        Title="{Binding WindowTitle}"
         Background="#F8F9FA">
 
     <Grid Margin="30,15,30,10">

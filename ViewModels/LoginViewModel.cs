@@ -26,6 +26,12 @@ namespace Rongmeng_20251223.ViewModels
             get => _userName;
             set => SetProperty(ref _userName, value);
         }
+        private string _windowTitle;
+        public string WindowTitle
+        {
+            get => _windowTitle;
+            set => SetProperty(ref _windowTitle, value);
+        }
 
         private bool _isRememberPassword;
         public bool IsRememberPassword
@@ -92,7 +98,8 @@ namespace Rongmeng_20251223.ViewModels
         public LoginViewModel(ClientApi api)
         {
             _api = api;
-
+            var titleInfo = new AppTitleInfo();
+            WindowTitle = titleInfo.FullTitle;
             StationList.Add("授权工站");
             StationList.Add("功能测试");
             StationList.Add("老化工站");
@@ -149,7 +156,6 @@ namespace Rongmeng_20251223.ViewModels
                         ErrorMessage = $"接口调用失败: {jsonStr}";
                         return;
                     }
-                    //
                     var result = JsonConvert.DeserializeObject<BaseResult>(jsonStr);
                     if (result != null && result.IsSuccess)
                     {

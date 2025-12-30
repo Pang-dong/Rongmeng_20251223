@@ -28,7 +28,6 @@ namespace Rongmeng_20251223.LH
     {
         private static readonly log4net.ILog logger = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         private Socket client;
-        private bool isConnecting = false;
         private Thread threadReceive;
         private Thread threadReadBuffer;
         private readonly ManualResetEvent manualResetEvent = new ManualResetEvent(false);

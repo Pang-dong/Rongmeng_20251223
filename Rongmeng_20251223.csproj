@@ -75,6 +75,7 @@
     </Compile>
     <Compile Include="Interface\ILHviedoApiCallBack.cs" />
     <Compile Include="Interface\Model\AppConfig.cs" />
+    <Compile Include="Interface\Model\AppTitleInfo.cs" />
     <Compile Include="Interface\Model\InvokeMESInterfaceHttp.cs" />
     <Compile Include="Interface\Model\MessageICommand.cs" />
     <Compile Include="Interface\Model\Messages.cs" />
@@ -88,6 +89,8 @@
     <Compile Include="LoginWindow.xaml.cs">
       <DependentUpon>LoginWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Service\DeviceBusinessService.cs" />
+    <Compile Include="Service\StationConfigService.cs" />
     <Compile Include="ViewModels\LoginViewModel.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
     <Page Include="FullScreenWindow.xaml">
