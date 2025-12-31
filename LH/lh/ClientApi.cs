@@ -35,6 +35,8 @@ namespace Rongmeng_20251223.LH
         private Queue<IDocommand> queuFrames = new Queue<IDocommand>();
         private IDocommand frame;
         ILHviedoApiCallBack lHviedoApiCallBack;
+        private volatile bool _isRunning =false;
+        private readonly object _lock = new object();
         private MemoryStream _msBuffer = new MemoryStream(1024 * 1024);
         /// <summary>
         /// 发送消息
@@ -153,9 +155,11 @@ namespace Rongmeng_20251223.LH
 
         private void StartThread()
         {
-            // 开启接收线程
+            _isRunning = true; // [新增] 标记线程开始运行
+
             threadReceive = new Thread(new ThreadStart(Receive)) { IsBackground = true };
             threadReceive.Start();
+
             threadReadBuffer = new Thread(new ThreadStart(StartReadBuffer)) { IsBackground = true };
             threadReadBuffer.Start();
         }
@@ -163,77 +167,63 @@ namespace Rongmeng_20251223.LH
         // 在 ClientApi.cs 中找到这个方法并替换
         private void StartReadBuffer()
         {
-            while (true)
+            while (_isRunning)
             {
+                IDocommand localFrame = null; 
+
                 try
                 {
-                    // 1. 积压处理逻辑
-                    if (queuFrames.Count > 3)
+                    lock (_lock)
                     {
-                        lock (queuFrames)
+                        // 1. 积压处理逻辑 (放在锁里面)
+                        if (queuFrames.Count > 5)
                         {
                             queuFrames.Clear();
                             logger.Debug("渲染过慢，主动丢弃积压帧以释放内存");
+                            continue;
                         }
-                        continue;
-                    }
 
-                    if (queuFrames.Count <= 0)
+                        // 2. 取出帧
+                        if (queuFrames.Count > 0)
+                        {
+                            localFrame = queuFrames.Dequeue();
+                        }
+                    }
+                    if (localFrame == null)
                     {
                         Thread.Sleep(1);
                         continue;
                     }
 
-                    // 2. 取出帧
-                    frame = queuFrames.Dequeue();
-
-                    if (frame != null)
+                    // 3. 处理数据 (此时 localFrame 是局部变量，绝对安全，不会被 DisConnect 清空影响)
+                    if (localFrame.PlayLoad == null || localFrame.PlayLoad.Length == 0)
                     {
-                        if (frame.PlayLoad == null || frame.PlayLoad.Length == 0)
-                        {
-                            logger.Warn("接收到空帧数据 (PlayLoad is null or empty)，跳过解码");
-                            frame = null;
-                            continue;
-                        }
-                        if (FFmpegDecoder.Instance == null)
-                        {
-                            logger.Error("FFmpegDecoder 未初始化 (Instance is null)！请检查程序启动时是否初始化了解码器。");
-                            Thread.Sleep(100);
-                            continue;
-                        }
+                        logger.Warn("接收到空帧数据...");
+                        continue;
+                    }
 
-                        try
+                    if (FFmpegDecoder.Instance == null)
+                    {
+                        logger.Error("FFmpegDecoder 未初始化...");
+                        Thread.Sleep(100);
+                        continue;
+                    }
+                    using (Bitmap image = FFmpegDecoder.Instance.DecodeFrameToBitmap(localFrame.PlayLoad))
+                    {
+                        if (image != null && lHviedoApiCallBack != null)
                         {
-                            using (Bitmap image = FFmpegDecoder.Instance.DecodeFrameToBitmap(frame.PlayLoad))
-                            {
-                                if (image != null)
-                                {
-                                    if (lHviedoApiCallBack != null)
-                                    {
-                                        lHviedoApiCallBack.GetBitmapImg(image);
-                                    }
-                                    else
-                                    {
-                                        logger.Warn("回调接口 lHviedoApiCallBack 为 null");
-                                    }
-                                }
-                            }
+                            lHviedoApiCallBack.GetBitmapImg(image);
                         }
-                        catch (Exception decodeEx)
-                        {
-                            logger.Error("解码过程内部发生错误: " + decodeEx.ToString());
-                        }
-                        // === 新增修复逻辑结束 ===
-
-                        frame = null;
                     }
                 }
                 catch (Exception ex)
                 {
+                    // 捕获异常，防止线程崩掉
                     logger.Error("解码线程通用异常: " + ex.Message);
-                    Thread.Sleep(10); // 避免死循环狂刷日志
+                    Thread.Sleep(10);
                 }
             }
+            logger.Debug("解码线程已退出。");
         }
 
         /// <summary>
@@ -294,9 +284,12 @@ namespace Rongmeng_20251223.LH
 
                         if (type == 0x00)
                         {
-                            if (queuFrames.Count < 15)
+                            lock (_lock) // [关键] 入队也要加锁
                             {
-                                queuFrames.Enqueue(frame);
+                                if (queuFrames.Count < 15)
+                                {
+                                    queuFrames.Enqueue(frame);
+                                }
                             }
                         }
                         else if (type == 0xF0) // === 命令响应 ===
@@ -346,36 +339,26 @@ namespace Rongmeng_20251223.LH
         {
             WeakReferenceMessenger.Default.Send(new Messages("正在断开连接..."));
             logger.Debug("执行断开连接操作");
-            queuFrames.Clear();
+
+            // [新增] 1. 停止读取线程
+            _isRunning = false;
+
+            // [新增] 2. 安全清空队列 (加锁)
+            lock (_lock)
+            {
+                queuFrames.Clear();
+            }
+
             if (client != null)
             {
+                // ... 原有的关闭 Socket 逻辑保持不变 ...
                 try
                 {
-                    // 只有连接状态下才需要 Shutdown，否则直接 Close
-                    if (client.Connected)
-                    {
-                        try
-                        {
-                            client.Shutdown(SocketShutdown.Both);
-                        }
-                        catch (Exception sdEx)
-                        {
-                            // Shutdown 有时在连接已丢失时会报错，记录即可，不影响后续关闭
-                            logger.Debug("Socket Shutdown异常: " + sdEx.Message);
-                        }
-                    }
-
-                    // 关闭 Socket
+                    if (client.Connected) client.Shutdown(SocketShutdown.Both);
                     client.Close();
                 }
-                catch (Exception ex)
-                {
-                    logger.Debug("断开连接异常: " + ex.Message);
-                }
-                finally
-                {
-                    client = null;
-                }
+                catch (Exception ex) { logger.Debug("断开异常: " + ex.Message); }
+                finally { client = null; }
             }
             WeakReferenceMessenger.Default.Send(new Messages("已断开连接"));
         }
