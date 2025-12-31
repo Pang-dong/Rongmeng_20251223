@@ -163,7 +163,9 @@ namespace Rongmeng_20251223.LH
             threadReadBuffer.Start();
         }
 
-        // 在 ClientApi.cs 中找到这个方法并替换
+        /// <summary>
+        /// 处理视频帧的线程方法
+        /// </summary>
         private void StartReadBuffer()
         {
             while (_isRunning)
@@ -283,7 +285,7 @@ namespace Rongmeng_20251223.LH
 
                         if (type == 0x00)
                         {
-                            lock (_lock) // [关键] 入队也要加锁
+                            lock (_lock)
                             {
                                 if (queuFrames.Count < 15)
                                 {
@@ -338,11 +340,9 @@ namespace Rongmeng_20251223.LH
         {
             WeakReferenceMessenger.Default.Send(new Messages("正在断开连接..."));
             logger.Debug("执行断开连接操作");
-
-            // [新增] 1. 停止读取线程
             _isRunning = false;
 
-            // [新增] 2. 安全清空队列 (加锁)
+            // [新增]安全清空队列 (加锁)
             lock (_lock)
             {
                 queuFrames.Clear();
@@ -350,7 +350,6 @@ namespace Rongmeng_20251223.LH
 
             if (client != null)
             {
-                // ... 原有的关闭 Socket 逻辑保持不变 ...
                 try
                 {
                     if (client.Connected) client.Shutdown(SocketShutdown.Both);
