@@ -94,6 +94,7 @@
     </Compile>
     <Compile Include="Service\DeviceBusinessService.cs" />
     <Compile Include="Service\StationConfigService.cs" />
+    <Compile Include="Service\WriteTestResultService.cs" />
     <Compile Include="ViewModels\LoginViewModel.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
     <Page Include="FullScreenWindow.xaml">

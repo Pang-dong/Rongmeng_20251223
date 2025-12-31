@@ -6,9 +6,13 @@ using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
+using Newtonsoft.Json;
 using Rongmeng_20251223.Interface.Model;
 using Rongmeng_20251223.LH;
+using Rongmeng_20251223.LH.lh;
 using Rongmeng_20251223.Service;
+using static System.Net.WebRequestMethods;
+using static Rongmeng_20251223.LH.lh.ReturnResult;
 
 namespace Rongmeng_20251223.ViewModels
 {
@@ -16,6 +20,7 @@ namespace Rongmeng_20251223.ViewModels
     {
         private readonly DeviceBusinessService _deviceService;
         private readonly StationConfigService _configService;
+        private readonly WriteTestResultService _writeTestResultService;
 
         public ObservableCollection<CameraControlItem> CameraControls { get; }
 
@@ -122,6 +127,7 @@ namespace Rongmeng_20251223.ViewModels
         {
             _deviceService = new DeviceBusinessService(api);
             _configService = new StationConfigService();
+            _writeTestResultService = new WriteTestResultService();
 
             CameraControls = new ObservableCollection<CameraControlItem>();
             DeviceInfo = new TcpDeviceinfo();
@@ -138,7 +144,7 @@ namespace Rongmeng_20251223.ViewModels
             ConnectCommand = new AsyncRelayCommand(Connect, CanConnect);
             DisConnectCommand = new AsyncRelayCommand(DisConnect, CanDisConnect);
 
-            LoadButtons(stationName);
+            LoadButtons(stationName);//加载按钮
 
             WeakReferenceMessenger.Default.Register<Messages>(this, (r, m) =>
             {
@@ -242,13 +248,6 @@ namespace Rongmeng_20251223.ViewModels
                 foreach (var item in CameraControls) item.Command.NotifyCanExecuteChanged();
             }
             StartAutoTestCommand.NotifyCanExecuteChanged();
-            AuthorizeCommand.NotifyCanExecuteChanged();
-            RebootCommand.NotifyCanExecuteChanged();
-            TurnOnLedCommand.NotifyCanExecuteChanged();
-            TurnOffLedCommand.NotifyCanExecuteChanged();
-            TurnOnVideoCommand.NotifyCanExecuteChanged();
-            TurnOffVideoCommand.NotifyCanExecuteChanged();
-            // [新增] 刷新连接按钮状态，确保连接成功后按钮变灰
             ConnectCommand.NotifyCanExecuteChanged();
         }
 
@@ -257,8 +256,6 @@ namespace Rongmeng_20251223.ViewModels
             string logEntry = $"[{DateTime.Now:HH:mm:ss}] {message}{Environment.NewLine}";
             StatusText += logEntry;
         }
-
-        // 放在 MainViewModel.cs 中
         private async Task RunAutoTestSequence()
         {
             if (IsAutoTesting) return;
@@ -361,9 +358,44 @@ namespace Rongmeng_20251223.ViewModels
             if (results.Count > 0)
             {
                 string jsonResult = Newtonsoft.Json.JsonConvert.SerializeObject(results, Newtonsoft.Json.Formatting.None);
-                AddLog("--------------------------------");
-                AddLog($"[最终结果JSON]: {jsonResult}");
-                AddLog("--------------------------------");
+                var config = ConfigManager.Load();//必须要这样把config的配置读出来
+                if (config.IsMesMode)
+                {
+                    string url = $"http://{config.FtpIp}:8017/Service.asmx";
+                    string finalUploadJson = _writeTestResultService.EnrichJsonData(jsonResult);
+                    var args = new Dictionary<string, object>
+                    {
+                        { "_WriteTestResult", finalUploadJson }
+                    };
+                    Task.Run(async () =>
+                    {
+                        try
+                        {
+                            // 3. 调用通用方法，传入字典
+                            string response = await InvokeMESInterface.PostToMesAsync(url, "WriteTestResultInfo", args);
+                            if (string.IsNullOrEmpty(response) || response.Contains("ERROR"))
+                            {
+                                AddLog($"接口调用失败: {response}");
+                                return;
+                            }
+                            var result = JsonConvert.DeserializeObject<BaseResult>(response);
+                            if (result != null && result.IsSuccess)
+                            {
+                                AddLog("MES数据更新成功");
+                            }
+                            else
+                            {
+                                string failMsg = result?.msg ?? "未知错误";
+                                AddLog(failMsg );
+                                return;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            AddLog($"MES上传异常: {ex.Message}");
+                        }
+                    });
+                }
             }
         }
 

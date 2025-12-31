@@ -5,7 +5,6 @@ using System.IO;
 using System.Reflection;
 using System.Text;
 
-// 命名空间保持和你项目一致
 namespace Rongmeng_20251223.LH.lh
 {
     // 1. 加上 static，表明这是个纯工具类，不需要 new ConfigManager()
