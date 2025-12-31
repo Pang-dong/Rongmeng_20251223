@@ -33,7 +33,6 @@ namespace Rongmeng_20251223.LH
         private readonly ManualResetEvent manualResetEvent = new ManualResetEvent(false);
         private byte[] buffers = new byte[0];
         private Queue<IDocommand> queuFrames = new Queue<IDocommand>();
-        private IDocommand frame;
         ILHviedoApiCallBack lHviedoApiCallBack;
         private volatile bool _isRunning =false;
         private readonly object _lock = new object();
