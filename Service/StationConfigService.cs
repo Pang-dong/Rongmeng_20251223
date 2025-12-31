@@ -36,7 +36,6 @@ namespace Rongmeng_20251223.Service
             {
                 throw new Exception($"解析配置文件失败: {ex.Message}");
             }
-
             return result;
         }
     }

@@ -268,10 +268,8 @@ namespace Rongmeng_20251223.LH
 
                 byte[] currentData = _msBuffer.ToArray();
 
-                // 直接从 Header (第12-15字节) 读取 Body 长度
                 int payloadLen = BitConverter.ToInt32(currentData, 12);
 
-                // 2. 计算这个包的总大小 (Header 16字节 + Body长度)
                 int packetSize = 16 + payloadLen;
 
                 if (_msBuffer.Length >= packetSize)
@@ -332,7 +330,6 @@ namespace Rongmeng_20251223.LH
             // 内存搬运：把后面的数据搬到最前面
             Buffer.BlockCopy(buffer, count, buffer, 0, (int)remaining);
 
-            // 截断流
             _msBuffer.SetLength(remaining);
         }
 
