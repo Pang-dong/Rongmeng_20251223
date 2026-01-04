@@ -173,24 +173,77 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <Border Grid.Row="0" Background="#1A1A1A" CornerRadius="8" Margin="0,0,0,15" ClipToBounds="True">
-                <Grid>
-                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <TextBlock Text="等待视频信号输入..." Foreground="#BBBBBB" FontSize="16" HorizontalAlignment="Center"/>
+            <Grid Grid.Row="0" Margin="0,0,0,15">
+
+                <Border Background="White" CornerRadius="8" ClipToBounds="True">
+                    <Border.Style>
+                        <Style TargetType="Border" BasedOn="{StaticResource CardStyle}">
+                            <Setter Property="Visibility" Value="Visible"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsVideoPlaying}" Value="True">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Left" Margin="30,0,0,0">
+
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                            <Label Content="RTSP：" Width="70" HorizontalContentAlignment="Right" 
+                                   FontSize="14" FontWeight="Bold" VerticalContentAlignment="Center"/>
+
+                            <TextBox Text="{Binding RtspAddress}" Width="200" Height="30" 
+                                     IsReadOnly="True" VerticalContentAlignment="Center"
+                                     BorderBrush="#888888" BorderThickness="1"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                            <Label Content="WLAN MAC：" Width="70" HorizontalContentAlignment="Right" 
+                                   FontSize="14" FontWeight="Bold" VerticalContentAlignment="Center"/>
+
+                            <TextBox Text="{Binding WlanMac}" Width="200" Height="30" 
+                                     IsReadOnly="False" VerticalContentAlignment="Center"
+                                     BorderBrush="#888888" BorderThickness="1"/>
+                        </StackPanel>
+
+                        <TextBlock Text="点击左侧 [打开视频] 按钮开始预览" 
+                                   Foreground="#999999" HorizontalAlignment="Left" Margin="105,20,0,0"/>
                     </StackPanel>
-                    <Image x:Name="PreviewImage" Stretch="Uniform" 
-                           MouseLeftButtonDown="PreviewImage_MouseLeftButtonDown" 
-                           Cursor="Hand">
-                        <Image.ToolTip>
-                            <ToolTip Style="{StaticResource DarkToolTipStyle}" Content="双击全屏预览"/>
-                        </Image.ToolTip>
-                    </Image>
-                    <Border Background="#99000000" HorizontalAlignment="Right" VerticalAlignment="Top" 
-                            Margin="10" CornerRadius="4" Padding="8,4">
-                        <TextBlock Text="● Live View" Foreground="White" FontSize="10" FontWeight="Bold"/>
-                    </Border>
-                </Grid>
-            </Border>
+                </Border>
+
+                <Border Background="#1A1A1A" CornerRadius="8" ClipToBounds="True">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsVideoPlaying}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+
+                    <Grid>
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <TextBlock Text="视频流加载中..." Foreground="#555555" FontSize="16" HorizontalAlignment="Center"/>
+                        </StackPanel>
+
+                        <Image x:Name="PreviewImage" Stretch="Uniform" 
+                               MouseLeftButtonDown="PreviewImage_MouseLeftButtonDown" 
+                               Cursor="Hand">
+                            <Image.ToolTip>
+                                <ToolTip Style="{StaticResource DarkToolTipStyle}" Content="双击全屏预览"/>
+                            </Image.ToolTip>
+                        </Image>
+
+                        <Border Background="#99000000" HorizontalAlignment="Right" VerticalAlignment="Top" 
+                                Margin="10" CornerRadius="4" Padding="8,4">
+                            <TextBlock Text="● Live View" Foreground="White" FontSize="10" FontWeight="Bold"/>
+                        </Border>
+                    </Grid>
+                </Border>
+            </Grid>
 
             <Border Grid.Row="1" Style="{StaticResource CardStyle}" 
                     Visibility="{Binding IsAutoTesting, Converter={StaticResource BooleanToVisibilityConverter}}">

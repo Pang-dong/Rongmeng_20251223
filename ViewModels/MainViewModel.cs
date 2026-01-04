@@ -41,15 +41,25 @@ namespace Rongmeng_20251223.ViewModels
                 }
             }
         }
-
-        // [新增] 控制判定按钮（PASS/FAIL）是否可见
+        private string _wlanMac;//WLAN MAC地址 控件模板
+        public string WlanMac
+        {
+            get => _wlanMac;
+            set => SetProperty(ref _wlanMac, value);
+        }
+        // 控制判定按钮（PASS/FAIL）是否可见
         private bool _isJudgmentButtonsVisible;
         public bool IsJudgmentButtonsVisible
         {
             get => _isJudgmentButtonsVisible;
             set => SetProperty(ref _isJudgmentButtonsVisible, value);
         }
-
+        private bool _isVideoPlaying;//是否在播放视频
+        public bool IsVideoPlaying
+        {
+            get => _isVideoPlaying;
+            set => SetProperty(ref _isVideoPlaying, value);
+        }
         public string StatusText
         {
             get => _statusText;
@@ -137,6 +147,20 @@ namespace Rongmeng_20251223.ViewModels
             TurnOffLedCommand = new RelayCommand(() => _deviceService.SetLed(false), () => IsConnected);
             TurnOnVideoCommand = new RelayCommand(() => _deviceService.ControlVideo(true), () => IsConnected);
             TurnOffVideoCommand = new RelayCommand(() => _deviceService.ControlVideo(false), () => IsConnected);
+
+            // [修改] 3. 在打开视频命令中设置 IsVideoPlaying = true
+            TurnOnVideoCommand = new RelayCommand(() =>
+            {
+                _deviceService.ControlVideo(true);
+                IsVideoPlaying = true; // 切换界面显示视频
+            }, () => IsConnected);
+
+            // [修改] 4. 在关闭视频命令中设置 IsVideoPlaying = false
+            TurnOffVideoCommand = new RelayCommand(() =>
+            {
+                _deviceService.ControlVideo(false);
+                IsVideoPlaying = false; // 切换界面显示信息面板
+            }, () => IsConnected);
 
             StartAutoTestCommand = new AsyncRelayCommand(RunAutoTestSequence, () => IsConnected);
             UserJudgmentCommand = new RelayCommand<string>(OnUserJudgmentReceived);
