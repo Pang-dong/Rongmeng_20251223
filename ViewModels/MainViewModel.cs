@@ -224,6 +224,24 @@ namespace Rongmeng_20251223.ViewModels
                 AddLog($"执行: {item.Title}");
 
                 _deviceService.ExecuteTestItem(item);
+                if (!string.IsNullOrEmpty(item.Command))
+                {
+                    try
+                    {
+                        // 将十六进制字符串转为数字
+                        ushort cmdId = Convert.ToUInt16(item.Command, 16);
+
+                        if (cmdId == 0x000E) // 打开视频指令
+                        {
+                            IsVideoPlaying = true; // 关键：这会让 InfoPanel 隐藏，Image 画布显示
+                        }
+                        else if (cmdId == 0x000F) // 关闭视频指令
+                        {
+                            IsVideoPlaying = false;
+                        }
+                    }
+                    catch { /* 忽略解析错误 */ }
+                }
                 if (item.Timeout > 0)
                 {
                     string originalTips = item.Tips;
@@ -258,7 +276,7 @@ namespace Rongmeng_20251223.ViewModels
                 IsDisConnecting = true;
                 await Task.Run(() => _deviceService.Disconnect());
             }
-            finally { IsDisConnecting = false; }
+            finally { IsDisConnecting = false; IsVideoPlaying = false; }
         }
 
         // [修改] 连接条件：正在连接时不可点，且已经连接成功后也不可点
