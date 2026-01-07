@@ -1,4 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.Messaging;
+using FFmpeg.AutoGen;
 using LHFactoryTool.LH;
 using Rongmeng_20251223.Interface;
 using Rongmeng_20251223.Interface.Model;
@@ -34,7 +35,7 @@ namespace Rongmeng_20251223.LH
         private byte[] buffers = new byte[0];
         private Queue<IDocommand> queuFrames = new Queue<IDocommand>();
         ILHviedoApiCallBack lHviedoApiCallBack;
-        private volatile bool _isRunning =false;
+        private volatile bool _isRunning = false;
         private readonly object _lock = new object();
         private MemoryStream _msBuffer = new MemoryStream(1024 * 1024);
         /// <summary>
@@ -70,7 +71,7 @@ namespace Rongmeng_20251223.LH
             try { ip = client.RemoteEndPoint.ToString(); } catch { }
             byte[] recvBuffer = new byte[1024 * 24];
 
-            while (true)
+            while (_isRunning)
             {
                 try
                 {
@@ -170,13 +171,12 @@ namespace Rongmeng_20251223.LH
         {
             while (_isRunning)
             {
-                IDocommand localFrame = null; 
+                IDocommand localFrame = null;
 
                 try
                 {
                     lock (_lock)
                     {
-                        // 1. 积压处理逻辑 (放在锁里面)
                         if (queuFrames.Count > 5)
                         {
                             queuFrames.Clear();
@@ -266,17 +266,29 @@ namespace Rongmeng_20251223.LH
                 // 1. 至少要能读出头部长度信息 (前16个字节)
                 if (_msBuffer.Length < 16) break;
 
-                byte[] currentData = _msBuffer.ToArray();
+                byte[] currentData = _msBuffer.GetBuffer();
 
                 int payloadLen = BitConverter.ToInt32(currentData, 12);
 
                 int packetSize = 16 + payloadLen;
 
+                if (packetSize < 0 || packetSize > 20 * 1024 * 1024)
+                {
+                    logger.Error($"异常包大小: {packetSize}，重置缓冲区");
+                    _msBuffer.SetLength(0);
+                    _msBuffer.Position = 0;
+                    break;
+                }
+
                 if (_msBuffer.Length >= packetSize)
                 {
+                    // 创建一个刚好够放这一帧的数组
+                    byte[] packetData = new byte [packetSize];
 
+                    // 只复制这一帧的数据 (源, 源偏移, 目标, 目标偏移, 长度)
+                    Buffer.BlockCopy(currentData,0, packetData, 0, packetSize);
                     // 4. 解析 frame
-                    IDocommand frame = SelectFactory.CreateDocomand().FromBuffer(currentData);
+                    IDocommand frame = SelectFactory.CreateDocomand().FromBuffer(packetData);
                     if (frame.IsFullyParsed)
                     {
                         uint type = BitConverter.ToUInt32(frame.PacketType, 0);
@@ -298,7 +310,7 @@ namespace Rongmeng_20251223.LH
                         }
                         else if (type == 0x01) // === IMU 数据 ===
                         {
-                            
+
                         }
                         else
                         {
@@ -317,20 +329,28 @@ namespace Rongmeng_20251223.LH
         {
             if (count <= 0) return;
 
-            // 如果移除的长度超过了总长度，直接清空
-            if (count >= _msBuffer.Length)
-            {
-                _msBuffer.SetLength(0);
-                return;
-            }
-
-            byte[] buffer = _msBuffer.GetBuffer();
+            // 计算剩余未处理的数据量
             long remaining = _msBuffer.Length - count;
 
-            // 内存搬运：把后面的数据搬到最前面
-            Buffer.BlockCopy(buffer, count, buffer, 0, (int)remaining);
+            if (remaining <= 0)
+            {
+                _msBuffer.SetLength(0);
+                _msBuffer.Position = 0;
+                if (_msBuffer.Capacity > 2 * 1024 * 1024)
+                {
+                    _msBuffer.Dispose(); // 丢弃旧的大数组
+                    _msBuffer = new MemoryStream(1024 * 1024);
+                }
+            }
+            else
+            {
+                byte[] buffer = _msBuffer.GetBuffer();
 
-            _msBuffer.SetLength(remaining);
+                Buffer.BlockCopy(buffer, count, buffer, 0, (int)remaining);
+
+                _msBuffer.SetLength(remaining);
+                _msBuffer.Position = remaining; // 关键：确保下次 Receive 写入时接在末尾
+            }
         }
 
         public void DisConnect()
@@ -338,8 +358,6 @@ namespace Rongmeng_20251223.LH
             WeakReferenceMessenger.Default.Send(new Messages("正在断开连接..."));
             logger.Debug("执行断开连接操作");
             _isRunning = false;
-
-            // [新增]安全清空队列 (加锁)
             lock (_lock)
             {
                 queuFrames.Clear();

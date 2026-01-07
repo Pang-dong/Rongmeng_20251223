@@ -20,8 +20,6 @@ namespace Rongmeng_20251223.Service
         {
             _api = api;
             _licenseService = new LicenseService();
-
-            // 注册响应消息，在这里处理业务逻辑，而不是在 ViewModel 里
             WeakReferenceMessenger.Default.Register<CommandResponseMessage>(this, (r, m) =>
             {
                 ProcessBusinessLogic(m.Value);

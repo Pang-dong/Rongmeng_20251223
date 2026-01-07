@@ -21,7 +21,7 @@ namespace Rongmeng_20251223.ViewModels
         private readonly DeviceBusinessService _deviceService;
         private readonly StationConfigService _configService;
         private readonly WriteTestResultService _writeTestResultService;
-
+        private static readonly log4net.ILog logger = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         public ObservableCollection<CameraControlItem> CameraControls { get; }
 
         private bool _isConnecting;
@@ -145,17 +145,13 @@ namespace Rongmeng_20251223.ViewModels
             RebootCommand = new RelayCommand(() => _deviceService.Reboot(), () => IsConnected);
             TurnOnLedCommand = new RelayCommand(() => _deviceService.SetLed(true), () => IsConnected);
             TurnOffLedCommand = new RelayCommand(() => _deviceService.SetLed(false), () => IsConnected);
-            TurnOnVideoCommand = new RelayCommand(() => _deviceService.ControlVideo(true), () => IsConnected);
-            TurnOffVideoCommand = new RelayCommand(() => _deviceService.ControlVideo(false), () => IsConnected);
 
-            // [修改] 3. 在打开视频命令中设置 IsVideoPlaying = true
             TurnOnVideoCommand = new RelayCommand(() =>
             {
                 _deviceService.ControlVideo(true);
                 IsVideoPlaying = true; // 切换界面显示视频
             }, () => IsConnected);
 
-            // [修改] 4. 在关闭视频命令中设置 IsVideoPlaying = false
             TurnOffVideoCommand = new RelayCommand(() =>
             {
                 _deviceService.ControlVideo(false);
@@ -181,7 +177,6 @@ namespace Rongmeng_20251223.ViewModels
             });
         }
 
-        // 位置：MainViewModel.cs -> LoadButtons 方法
 
         private void LoadButtons(string stationName)
         {
@@ -217,6 +212,13 @@ namespace Rongmeng_20251223.ViewModels
                 MessageBox.Show("请先连接设备！");
                 return;
             }
+            // 将十六进制字符串转为数字
+            ushort cmdId = Convert.ToUInt16(item.Command, 16);
+            if (cmdId == 0x000E && IsVideoPlaying) 
+            {
+                AddLog("视频流已打开");
+                return;
+            }
             try
             {
                 CurrentTestItemName = item.Title;
@@ -228,9 +230,6 @@ namespace Rongmeng_20251223.ViewModels
                 {
                     try
                     {
-                        // 将十六进制字符串转为数字
-                        ushort cmdId = Convert.ToUInt16(item.Command, 16);
-
                         if (cmdId == 0x000E) // 打开视频指令
                         {
                             IsVideoPlaying = true; // 关键：这会让 InfoPanel 隐藏，Image 画布显示
@@ -240,7 +239,7 @@ namespace Rongmeng_20251223.ViewModels
                             IsVideoPlaying = false;
                         }
                     }
-                    catch { /* 忽略解析错误 */ }
+                    catch {}
                 }
                 if (item.Timeout > 0)
                 {
@@ -372,7 +371,7 @@ namespace Rongmeng_20251223.ViewModels
                     }
                     else
                     {
-                        step.TestState = 1; // [关键] 成功变绿
+                        step.TestState = 1;
                         AddLog($"[PASS] {step.Content} -> 合格");
                     }
                     // 稍微停顿，让用户看清变绿的效果
