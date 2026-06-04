@@ -396,18 +396,12 @@ namespace Rongmeng_20251223.ViewModels
                 var config = ConfigManager.Load();//必须要这样把config的配置读出来
                 if (config.IsMesMode)
                 {
-                    string url = $"http://{config.FtpIp}:8017/Service.asmx";
                     string finalUploadJson = _writeTestResultService.EnrichJsonData(jsonResult);
-                    var args = new Dictionary<string, object>
-                    {
-                        { "_WriteTestResult", finalUploadJson }
-                    };
                     Task.Run(async () =>
                     {
                         try
                         {
-                            // 3. 调用通用方法，传入字典
-                            string response = await InvokeMESInterface.PostToMesAsync(url, "WriteTestResultInfo", args);
+                            string response = await WebApiHelper.WriteTestResultAsync(finalUploadJson);
                             if (string.IsNullOrEmpty(response) || response.Contains("ERROR"))
                             {
                                 AddLog($"接口调用失败: {response}");
@@ -421,7 +415,7 @@ namespace Rongmeng_20251223.ViewModels
                             else
                             {
                                 string failMsg = result?.msg ?? "未知错误";
-                                AddLog(failMsg );
+                                AddLog(failMsg);
                                 return;
                             }
                         }

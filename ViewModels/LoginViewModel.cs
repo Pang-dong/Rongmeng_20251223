@@ -143,13 +143,7 @@ namespace Rongmeng_20251223.ViewModels
                 }
                 try
                 {
-                    var args = new Dictionary<string, object>
-                    {
-                        { "_username", UserName },
-                        { "_password", password }
-                    };
-                    string url = $"http://{FtpIp}:8017/Service.asmx";
-                    string jsonStr = await InvokeMESInterface.PostToMesAsync(url, "GetUserLoginInfo", args);
+                    string jsonStr = await WebApiHelper.GetUserLoginInfo(UserName, password);
 
                     if (string.IsNullOrEmpty(jsonStr) || jsonStr.Contains("ERROR"))
                     {

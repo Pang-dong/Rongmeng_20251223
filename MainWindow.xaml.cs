@@ -46,7 +46,6 @@ namespace Rongmeng_20251223
             FFmpegDecoder.Instance.Initialize(1920, 1080, VideoFormat.H264);
         }
 
-        private void SavePictureButton_Click(object sender, RoutedEventArgs e) { }
         /// <summary>
         /// 出图
         /// </summary>
@@ -111,6 +110,22 @@ namespace Rongmeng_20251223
         {
             LogScrollViewer.ScrollToBottom();
         }
+        private void Window_KeyDown(object sender, KeyEventArgs e)
+        {
+            var vm = DataContext as MainViewModel;
+            if (vm == null || !vm.IsJudgmentButtonsVisible) return;
+
+            if (e.Key == Key.Enter)
+            {
+                vm.UserJudgmentCommand.Execute("PASS");
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Space)
+            {
+                vm.UserJudgmentCommand.Execute("FAIL");
+                e.Handled = true;
+            }
+        }
         /// <summary>
         /// 双击放大图像方法
         /// </summary>
@@ -118,9 +133,9 @@ namespace Rongmeng_20251223
         /// <param name="e"></param>
         private void PreviewImage_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (e.ClickCount == 2) // 只有双击才触发
+            if (e.ClickCount == 2)
             {
-                if (writeable == null) return; // 如果没有图像，不打开
+                if (writeable == null) return;
 
                 // 防止重复打开
                 if (_fullScreenWindow == null)
@@ -129,14 +144,13 @@ namespace Rongmeng_20251223
                     // 订阅关闭事件，窗口关闭后置空引用
                     _fullScreenWindow.Closed += (s, args) => _fullScreenWindow = null;
 
-                    // 传入当前的图像源
                     _fullScreenWindow.UpdateImageSource(writeable);
 
                     _fullScreenWindow.Show();
                 }
                 else
                 {
-                    _fullScreenWindow.Activate(); // 如果已打开，则激活到前台
+                    _fullScreenWindow.Activate();
                 }
             }
         }

@@ -8,7 +8,8 @@
         mc:Ignorable="d"
         Background="#F5F6F8"
         Title="LH-Rongmeng" Height="760" Width="1080" MinHeight="600" MinWidth="900"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        KeyDown="Window_KeyDown">
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
@@ -158,9 +159,6 @@
                     </ListBox>
                 </DockPanel>
 
-                <Button Grid.Row="5" Content="保存当前截图" Margin="0,10,0,0" 
-                        Click="SavePictureButton_Click" Height="34"
-                        Style="{StaticResource ButtonPrimary}" HorizontalAlignment="Stretch"/>
             </Grid>
         </Border>
 
@@ -172,7 +170,7 @@
             </Grid.RowDefinitions>
 
             <Grid Grid.Row="0" Margin="0,0,0,15">
-                <Border Background="White" CornerRadius="8" ClipToBounds="True">
+                <Border Background="#FFFDE7" CornerRadius="8" ClipToBounds="True">
                     <Border.Style>
                         <Style TargetType="Border" BasedOn="{StaticResource CardStyle}">
                             <Setter Property="Visibility" Value="Visible"/>
