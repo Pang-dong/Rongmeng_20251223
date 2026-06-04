@@ -73,14 +73,12 @@
 
                     <DockPanel LastChildFill="True" Margin="0,0,0,8">
                         <Label Content="IP地址" Width="60" Padding="0,5,0,0" Foreground="#333333" FontWeight="SemiBold"/>
-
                         <TextBox Text="{Binding DeviceInfo.IPAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
                                  Height="30" Foreground="Black" CaretBrush="Black"/>
                     </DockPanel>
 
                     <DockPanel LastChildFill="True" Margin="0,0,0,12">
                         <Label Content="端口号" Width="60" Padding="0,5,0,0" Foreground="#333333" FontWeight="SemiBold"/>
-
                         <TextBox Text="{Binding DeviceInfo.Port, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
                                  Height="30" Foreground="Black" CaretBrush="Black"/>
                     </DockPanel>
@@ -174,7 +172,6 @@
             </Grid.RowDefinitions>
 
             <Grid Grid.Row="0" Margin="0,0,0,15">
-
                 <Border Background="White" CornerRadius="8" ClipToBounds="True">
                     <Border.Style>
                         <Style TargetType="Border" BasedOn="{StaticResource CardStyle}">
@@ -190,25 +187,22 @@
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Left" Margin="30,0,0,0">
 
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                            <Label Content="RTSP：" Width="70" HorizontalContentAlignment="Right" 
-                                   FontSize="14" FontWeight="Bold" VerticalContentAlignment="Center"/>
+                            <Label Content="RTSP：" Width="70" HorizontalContentAlignment="Right" FontSize="14" 
+                                   FontWeight="Bold" VerticalContentAlignment="Center" Foreground="#333333"/>
 
-                            <TextBox Text="{Binding RtspAddress}" Width="200" Height="30" 
-                                     IsReadOnly="True" VerticalContentAlignment="Center"
-                                     BorderBrush="#888888" BorderThickness="1"/>
+                            <TextBox Text="{Binding RtspAddress}" Width="200" Height="30" IsReadOnly="True" 
+                                     VerticalContentAlignment="Center" BorderBrush="#888888" BorderThickness="1" Foreground="Black"/>
                         </StackPanel>
 
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                            <Label Content="WLAN MAC：" Width="70" HorizontalContentAlignment="Right" 
-                                   FontSize="14" FontWeight="Bold" VerticalContentAlignment="Center"/>
+                            <Label Content="WLAN MAC：" Width="70" HorizontalContentAlignment="Right" FontSize="14" 
+                                   FontWeight="Bold" VerticalContentAlignment="Center" Foreground="#333333"/>
 
-                            <TextBox Text="{Binding WlanMac}" Width="200" Height="30" 
-                                     IsReadOnly="False" VerticalContentAlignment="Center"
-                                     BorderBrush="#888888" BorderThickness="1"/>
+                            <TextBox Text="{Binding WlanMac}" Width="200" Height="30" IsReadOnly="True" VerticalContentAlignment="Center"
+                                     BorderBrush="#888888" BorderThickness="1" Foreground="Black"/>
                         </StackPanel>
 
-                        <TextBlock Text="点击左侧 [打开视频] 按钮开始预览" 
-                                   Foreground="#999999" HorizontalAlignment="Left" Margin="105,20,0,0"/>
+                        <TextBlock Text="点击左侧 [打开视频] 按钮开始预览"  Foreground="#999999" HorizontalAlignment="Left" Margin="5,0,0,0"/>
                     </StackPanel>
                 </Border>
 
@@ -248,56 +242,81 @@
             <Border Grid.Row="1" Style="{StaticResource CardStyle}" 
                     Visibility="{Binding IsAutoTesting, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="当前测试步骤" Foreground="#666666" FontSize="12"/>
                         <TextBlock Text="{Binding CurrentTestItemName}" FontSize="18" Foreground="{StaticResource PrimaryBrush}" Margin="0,2"/>
                         <TextBlock Text="{Binding CurrentTestPrompt}" FontSize="32" FontWeight="Bold" Foreground="#E53935" TextWrapping="Wrap" Margin="0,5,0,0"/>
                     </StackPanel>
+                </Grid>
+            </Border>
 
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Visibility="{Binding IsJudgmentButtonsVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
-                        <Button Content="FAIL / 不合格" Command="{Binding UserJudgmentCommand}" CommandParameter="FAIL" 
-                                Style="{StaticResource ButtonDanger}" Width="130" Height="45" Margin="0,0,15,0" FontSize="14" FontWeight="Bold"/>
+            <Grid Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Margin="0,0,10,0">
+                    <Border.Style>
+                        <Style TargetType="Border" BasedOn="{StaticResource CardStyle}">
+                            <Setter Property="Height" Value="200"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsAutoTesting}" Value="True">
+                                    <Setter Property="Height" Value="130"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <DockPanel LastChildFill="False">
+                            <TextBlock Text="运行日志 / System Log" Style="{StaticResource SectionTitle}" DockPanel.Dock="Left"/>
+                        </DockPanel>
+
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" x:Name="LogScrollViewer">
+                            <TextBlock x:Name="ConnectionStatusText" 
+                                       Text="{Binding StatusText}" 
+                                       FontFamily="Consolas" Foreground="#333333" 
+                                       TextWrapping="Wrap" 
+                                       SizeChanged="ConnectionStatusText_SizeChanged"/>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+
+                <Border Grid.Column="1" 
+                        Background="#FFFDE7" 
+                        CornerRadius="8" 
+                        Padding="15"
+                        Margin="0,0,0,15"
+                        MinWidth="160"
+                        Visibility="{Binding IsAutoTesting, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Height" Value="130"/>
+                            <Setter Property="Effect">
+                                <Setter.Value>
+                                    <DropShadowEffect Color="#D0D0D0" BlurRadius="10" ShadowDepth="0" Opacity="0.4"/>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Border.Style>
+
+                    <StackPanel Orientation="Vertical" VerticalAlignment="Center" 
+                                Visibility="{Binding IsJudgmentButtonsVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+
                         <Button Content="PASS / 合格" Command="{Binding UserJudgmentCommand}" CommandParameter="PASS" 
-                                Style="{StaticResource ButtonSuccess}" Width="130" Height="45" FontSize="14" FontWeight="Bold"/>
+                                Style="{StaticResource ButtonSuccess}" Height="35" FontSize="14" FontWeight="Bold"/>
+
+                        <Button Content="FAIL / 不合格" Command="{Binding UserJudgmentCommand}" CommandParameter="FAIL" 
+                                Style="{StaticResource ButtonDanger}" Height="35" Margin="0,0,0,10" FontSize="14" FontWeight="Bold"/>
                     </StackPanel>
-                </Grid>
-            </Border>
-
-            <Border Grid.Row="2" Margin="0">
-                <Border.Style>
-                    <Style TargetType="Border" BasedOn="{StaticResource CardStyle}">
-                        <Setter Property="Height" Value="200"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsAutoTesting}" Value="True">
-                                <Setter Property="Height" Value="100"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Border.Style>
-
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-
-                    <DockPanel LastChildFill="False">
-                        <TextBlock Text="运行日志 / System Log" Style="{StaticResource SectionTitle}" DockPanel.Dock="Left"/>
-                    </DockPanel>
-
-                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" x:Name="LogScrollViewer">
-                        <TextBlock x:Name="ConnectionStatusText" 
-                                   Text="{Binding StatusText}" 
-                                   FontFamily="Consolas" Foreground="#333333" 
-                                   TextWrapping="Wrap" 
-                                   SizeChanged="ConnectionStatusText_SizeChanged"/>
-                    </ScrollViewer>
-                </Grid>
-            </Border>
+                </Border>
+            </Grid>
         </Grid>
     </Grid>
 </Window>

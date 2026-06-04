@@ -329,6 +329,18 @@ namespace Rongmeng_20251223.ViewModels
                     {
                         // 执行测试指令
                         _deviceService.ExecuteTestItem(config);
+                        if(!string.IsNullOrEmpty(config.Command))
+                        {
+                            ushort cmdId = Convert.ToUInt16(config.Command, 16);
+                            if (cmdId == 0x000E) // 打开视频指令
+                            {
+                                IsVideoPlaying = true; // 关键：这会让 InfoPanel 隐藏，Image 画布显示
+                            }
+                            else if (cmdId == 0x000F) // 关闭视频指令
+                            {
+                                IsVideoPlaying = false;
+                            }
+                        }
                     }
                     catch (Exception cmdEx) { AddLog($"[异常] {cmdEx.Message}"); }
 
@@ -379,7 +391,11 @@ namespace Rongmeng_20251223.ViewModels
                 }
 
                 AddLog("所有测试项通过！");
-                GenerateAndLogResult(results);
+                var MesConfig = ConfigManager.Load();
+                if (MesConfig.IsMesMode)
+                {
+                    GenerateAndLogResult(results);
+                }
             }
             catch (Exception ex)
             {

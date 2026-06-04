@@ -22,7 +22,7 @@ namespace Rongmeng_20251223.Interface.Model
         #endregion
         #region 业务负载字段 (Layer 3)
         public byte[] CommandType { get; set; } = new byte[4]; // CmdType
-        public byte[] PlayLoad { get; set; }     // 参数或视频裸流
+        public byte[] PlayLoad { get; set; }
         #endregion
         #region 响应字段
         public bool IsResponse { get; set; }

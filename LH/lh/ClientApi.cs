@@ -94,7 +94,6 @@ namespace Rongmeng_20251223.LH
         {
             WeakReferenceMessenger.Default.Send(new Messages("开始连接..."));
 
-            // 1. 清理旧连接逻辑保持不变
             if (client != null)
             {
                 try

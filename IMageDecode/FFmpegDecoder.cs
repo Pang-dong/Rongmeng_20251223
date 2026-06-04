@@ -93,8 +93,6 @@ namespace LHFactoryTool.LH
                         _codecContext->flags |= ffmpeg.AV_CODEC_FLAG_LOW_DELAY;
                         _codecContext->flags2 |= ffmpeg.AV_CODEC_FLAG2_FAST;
                         
-                        // 【关键优化2】线程数设为1或极低值。多线程解码会引入帧缓冲延迟。
-                        // 对于实时流，thread_count = 1 通常是最快的响应速度
                         _codecContext->thread_count = 1; 
                     }
                     else
@@ -129,28 +127,16 @@ namespace LHFactoryTool.LH
                 {
                     // 重置 Packet
                     ffmpeg.av_packet_unref(_packet);
-
-                    // --- 优化数据拷贝 ---
-                    // 检查是否需要添加 Start Code (00 00 00 01)
-                    // H264通常需要 Start Code，有些流传输过来不带
                     bool hasStartCode = frameData.Length >= 4 &&
                                        ((frameData[0] == 0 && frameData[1] == 0 && frameData[2] == 0 && frameData[3] == 1) ||
                                         (frameData[0] == 0 && frameData[1] == 0 && frameData[2] == 1));
 
                     int allocSize = frameData.Length + (hasStartCode ? 0 : 4);
                     
-                    // 使用 av_malloc 分配非托管内存
-                    // 注意：FFmpeg 要求 buffer 有 padding
                     byte* buffer = (byte*)ffmpeg.av_malloc((ulong)allocSize + ffmpeg.AV_INPUT_BUFFER_PADDING_SIZE);
 
                     fixed (byte* srcPtr = frameData)
                     {
-                        //if (!hasStartCode && _format == VideoFormat.H264)
-                        //{
-                        //    // 手动写入 Start Code
-                        //    buffer[0] = 0; buffer[1] = 0; buffer[2] = 0; buffer[3] = 1;
-                        //    Buffer.MemoryCopy(srcPtr, buffer + 4, frameData.Length, frameData.Length);
-                        //}
                         if (!hasStartCode && (_format == VideoFormat.H264 || _format == VideoFormat.H265)) // [修改] 包含 H265
                         {
                             // 手动写入 Start Code
@@ -183,9 +169,6 @@ namespace LHFactoryTool.LH
                     }
                     finally
                     {
-                        // 必须释放 av_malloc 的内存，因为 packet 已经使用完毕
-                        // 注意：av_packet_unref 不会释放我们自己 av_malloc 的 buffer，除非使用 av_buffer_create 包装
-                        // 这里我们手动设置了 data，所以手动释放是安全的，只要在 send_packet 之后
                         ffmpeg.av_free(buffer); 
                         _packet->data = null; 
                         _packet->size = 0;
@@ -210,9 +193,6 @@ namespace LHFactoryTool.LH
             
             // 如果解码出来的尺寸发生变化（例如流切换分辨率），需要适应
             if (srcW <= 0 || srcH <= 0) return null;
-
-            // 创建目标 Bitmap
-            // PixelFormat.Format24bppRgb 在 Windows GDI+ 中通常是 BGR 顺序
             Bitmap bitmap = new Bitmap(_width, _height, PixelFormat.Format24bppRgb);
             
             BitmapData bmpData = bitmap.LockBits(
@@ -223,30 +203,21 @@ namespace LHFactoryTool.LH
 
             try
             {
-                // 初始化或更新 SWS Context
-                // 只有当尺寸或格式改变时才重建
                 if (_swsContext == null || 
                     _codecContext->width != srcW || // 检查是否有变动
                     _codecContext->height != srcH) 
                 {
                     if (_swsContext != null) ffmpeg.sws_freeContext(_swsContext);
 
-                    // SWS_BICUBIC 质量比 BILINEAR 好，虽然慢一点点，但现在 CPU 足够快
-                    // 如果追求极致速度，改回 SWS_FAST_BILINEAR
                     _swsContext = ffmpeg.sws_getContext( 
                         srcW, srcH, (AVPixelFormat)_frame->format,
                         _width, _height, AVPixelFormat.AV_PIX_FMT_BGR24, // 对应 C# Format24bppRgb
                         ffmpeg.SWS_BICUBIC, null, null, null
                     );
                 }
-                // 准备目标数据指针数组
-                // bmpData.Scan0 是 Bitmap 的内存首地址
-                // bmpData.Stride 是 这一行的字节跨度 (包含 Padding)
                 byte*[] dstData = { (byte*)bmpData.Scan0 };
                 int[] dstLinesize = { bmpData.Stride };
 
-                // 【Direct Rendering】
-                // 直接让 sws_scale 把结果写到 Bitmap 的内存里
                 ffmpeg.sws_scale(
                     _swsContext,
                     _frame->data,

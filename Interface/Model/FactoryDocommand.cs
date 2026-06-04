@@ -114,14 +114,12 @@ namespace Rongmeng_20251223.Interface.Model
             int msgPacketSize = 4 + 4 + cmdPacketSize;
             byte[] msgPacket = new byte[msgPacketSize];
 
-            // 写入 MsgType (4字节)
             Array.Copy(PacketType, 0, msgPacket, 0, 4);
-            // 写入 DataLen (4字节)
+
             Array.Copy(msgPacketLenBytes, 0, msgPacket, 4, 4);
-            // 写入 CmdPacket
+
             Array.Copy(cmdPacket, 0, msgPacket, 8, cmdPacketSize);
 
-            // 3. 构建 MessageHead (16字节) + MsgPacket
             byte[] buffer = new byte[16 + msgPacketSize];
 
             // Header 0-11
@@ -142,7 +140,6 @@ namespace Rongmeng_20251223.Interface.Model
             byte[] totalLenBytes = BitConverter.GetBytes((uint)msgPacketSize);
             Array.Copy(totalLenBytes, 0, buffer, 12, 4);
 
-            // 4. 拼接 MsgPacket
             Array.Copy(msgPacket, 0, buffer, 16, msgPacketSize);
 
             return buffer;
