@@ -218,7 +218,6 @@ namespace Rongmeng_20251223.LH
                 }
                 catch (Exception ex)
                 {
-                    // 捕获异常，防止线程崩掉
                     logger.Error("解码线程通用异常: " + ex.Message);
                     Thread.Sleep(10);
                 }

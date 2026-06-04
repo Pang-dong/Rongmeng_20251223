@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{A7679385-3540-452A-B280-BF9AC7072B94}</ProjectGuid>
     <OutputType>WinExe</OutputType>
-    <RootNamespace>Rongmeng_20251223</RootNamespace>
-    <AssemblyName>Rongmeng_20251223</AssemblyName>
+    <RootNamespace>LHFactory_Rongmeng</RootNamespace>
+    <AssemblyName>LHFactory_Rongmeng</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <LangVersion>10.0</LangVersion>
     <FileAlignment>512</FileAlignment>

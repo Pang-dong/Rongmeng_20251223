@@ -30,10 +30,6 @@ namespace Rongmeng_20251223.Service
         public void Connect(TcpDeviceinfo info) => _api.Connect(info);
         public void Disconnect() => _api.DisConnect();
 
-        public void Reboot() => SendCommand(CommandType.Reboot);
-        public void SetLed(bool isOn) => SendCommand(isOn ? CommandType.EnableLed : CommandType.DisableLed, 0);
-        public void ControlVideo(bool isStart) => SendCommand(isStart ? CommandType.StartVideo : CommandType.StopVideo);
-        public void GetUid() => SendCommand(CommandType.GetUid);
         public void ExecuteTestItem(StationTestItem item)
         {
             ushort cmdId = Convert.ToUInt16(item.Command, 16);
@@ -55,16 +51,6 @@ namespace Rongmeng_20251223.Service
                     break;
             }
             _api.Send(docommand);
-        }
-        private void SendCommand(CommandType type, int? intVal = null)
-        {
-            IDocommand cmd;
-            if (intVal.HasValue)
-                cmd = SelectFactory.CreateDocomandInt(MessageTypes.Command, type, intVal.Value);
-            else
-                cmd = SelectFactory.CreateDocomandIntArray(MessageTypes.Command, type);
-
-            _api.Send(cmd);
         }
 
         private void ProcessBusinessLogic(IDocommand response)

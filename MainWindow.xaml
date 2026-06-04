@@ -100,7 +100,7 @@
 
                 <StackPanel Grid.Row="2">
                     <TextBlock Text="自动化流程" Style="{StaticResource SectionTitle}"/>
-                    <Button Content="启动自动测试" Command="{Binding StartAutoTestCommand}" 
+                    <Button Content="开始测试" Command="{Binding StartAutoTestCommand}" 
                             Height="40" Style="{StaticResource ButtonWarning}" 
                             FontSize="14" FontWeight="Bold"
                             HorizontalAlignment="Stretch" hc:BorderElement.CornerRadius="4"/>

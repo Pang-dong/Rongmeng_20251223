@@ -124,12 +124,6 @@ namespace Rongmeng_20251223.ViewModels
 
         public IAsyncRelayCommand StartAutoTestCommand { get; }
         public IRelayCommand<string> UserJudgmentCommand { get; }
-        public IRelayCommand AuthorizeCommand { get; }
-        public IRelayCommand RebootCommand { get; }
-        public IRelayCommand TurnOnLedCommand { get; }
-        public IRelayCommand TurnOffLedCommand { get; }
-        public IRelayCommand TurnOnVideoCommand { get; }
-        public IRelayCommand TurnOffVideoCommand { get; }
         public IAsyncRelayCommand ConnectCommand { get; }
         public IAsyncRelayCommand DisConnectCommand { get; }
 
@@ -141,22 +135,6 @@ namespace Rongmeng_20251223.ViewModels
 
             CameraControls = new ObservableCollection<CameraControlItem>();
             DeviceInfo = new TcpDeviceinfo();
-            AuthorizeCommand = new RelayCommand(() => _deviceService.GetUid(), () => IsConnected);
-            RebootCommand = new RelayCommand(() => _deviceService.Reboot(), () => IsConnected);
-            TurnOnLedCommand = new RelayCommand(() => _deviceService.SetLed(true), () => IsConnected);
-            TurnOffLedCommand = new RelayCommand(() => _deviceService.SetLed(false), () => IsConnected);
-
-            TurnOnVideoCommand = new RelayCommand(() =>
-            {
-                _deviceService.ControlVideo(true);
-                IsVideoPlaying = true; // 切换界面显示视频
-            }, () => IsConnected);
-
-            TurnOffVideoCommand = new RelayCommand(() =>
-            {
-                _deviceService.ControlVideo(false);
-                IsVideoPlaying = false; // 切换界面显示信息面板
-            }, () => IsConnected);
 
             StartAutoTestCommand = new AsyncRelayCommand(RunAutoTestSequence, () => IsConnected);
             UserJudgmentCommand = new RelayCommand<string>(OnUserJudgmentReceived);
