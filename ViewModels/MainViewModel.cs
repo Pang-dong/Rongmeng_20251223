@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
@@ -122,10 +123,27 @@ namespace Rongmeng_20251223.ViewModels
 
         private TaskCompletionSource<bool> _userInputSignal;
 
+        // ── 统计 ──
+        private int _passCount;
+        public int PassCount { get => _passCount; set => SetProperty(ref _passCount, value); }
+
+        private int _failCount;
+        public int FailCount { get => _failCount; set => SetProperty(ref _failCount, value); }
+
+        private string _passRate = "-- %";
+        public string PassRate { get => _passRate; set => SetProperty(ref _passRate, value); }
+
+        private string _testElapsed = "--:--";
+        public string TestElapsed { get => _testElapsed; set => SetProperty(ref _testElapsed, value); }
+
+        private DateTime _testStartTime;
+        private DispatcherTimer _elapsedTimer;
+
         public IAsyncRelayCommand StartAutoTestCommand { get; }
         public IRelayCommand<string> UserJudgmentCommand { get; }
         public IAsyncRelayCommand ConnectCommand { get; }
         public IAsyncRelayCommand DisConnectCommand { get; }
+        public IRelayCommand ClearStatsCommand { get; }
 
         public MainViewModel(ClientApi api, string stationName)
         {
@@ -141,6 +159,14 @@ namespace Rongmeng_20251223.ViewModels
 
             ConnectCommand = new AsyncRelayCommand(Connect, CanConnect);
             DisConnectCommand = new AsyncRelayCommand(DisConnect, CanDisConnect);
+            ClearStatsCommand = new RelayCommand(ClearStats);
+
+            _elapsedTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+            _elapsedTimer.Tick += (s, e) =>
+            {
+                var elapsed = DateTime.Now - _testStartTime;
+                TestElapsed = elapsed.ToString(@"mm\:ss");
+            };
 
             LoadButtons(stationName);//加载按钮
 
@@ -284,11 +310,18 @@ namespace Rongmeng_20251223.ViewModels
                 return;
             }
 
+            var scanWin = new ScanCodeWindow();
+            if (scanWin.ShowDialog() != true) return;
+            string currentSN = scanWin.ScannedCode;
+
             Dictionary<string, string> results = new Dictionary<string, string>();
 
             try
             {
                 IsAutoTesting = true; // 1. 设置标志位，界面触发器会缩小日志高度，禁用手动按钮
+                _testStartTime = DateTime.Now;
+                TestElapsed = "00:00";
+                _elapsedTimer.Start();
                 AddLog(">>>>>> 开启自动化检测流程 <<<<<<");
 
                 // 2. 重置所有按钮状态（颜色恢复默认）
@@ -355,6 +388,9 @@ namespace Rongmeng_20251223.ViewModels
                     {
                         step.TestState = 2; // [关键] 失败变红
                         AddLog($"[FAIL] {step.Content} -> 不合格");
+                        FailCount++;
+                        UpdatePassRate();
+                        _elapsedTimer.Stop();
                         MessageBox.Show($"测试在步骤 [{step.Content}] 失败！", "测试不合格", MessageBoxButton.OK, MessageBoxImage.Error);
                         GenerateAndLogResult(results);
                         return; // 失败直接中断
@@ -369,6 +405,9 @@ namespace Rongmeng_20251223.ViewModels
                 }
 
                 AddLog("所有测试项通过！");
+                PassCount++;
+                UpdatePassRate();
+                _elapsedTimer.Stop();
                 var MesConfig = ConfigManager.Load();
                 if (MesConfig.IsMesMode)
                 {
@@ -381,6 +420,7 @@ namespace Rongmeng_20251223.ViewModels
             }
             finally
             {
+                _elapsedTimer.Stop();
                 IsAutoTesting = false; // 恢复状态
                 IsJudgmentButtonsVisible = false;
                 CurrentTestPrompt = "测试结束";
@@ -431,6 +471,23 @@ namespace Rongmeng_20251223.ViewModels
         private void OnUserJudgmentReceived(string result)
         {
             _userInputSignal?.TrySetResult(result == "PASS");
+        }
+
+        private void UpdatePassRate()
+        {
+            int total = PassCount + FailCount;
+            if (total == 0)
+                PassRate = "-- %";
+            else
+                PassRate = $"{(PassCount * 100.0 / total):F1}%";
+        }
+
+        private void ClearStats()
+        {
+            PassCount = 0;
+            FailCount = 0;
+            PassRate = "-- %";
+            TestElapsed = "--:--";
         }
     }
 }

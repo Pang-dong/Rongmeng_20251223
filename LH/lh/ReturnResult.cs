@@ -13,7 +13,7 @@ namespace Rongmeng_20251223.LH.lh
             public string status { get; set; }
 
             public string msg { get; set; }
-            public bool IsSuccess => status == "1";
+            public bool IsSuccess => status == "true";
         }
     }
 }

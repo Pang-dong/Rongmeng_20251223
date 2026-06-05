@@ -182,26 +182,75 @@
                         </Style>
                     </Border.Style>
 
-                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Left" Margin="30,0,0,0">
+                    <Grid VerticalAlignment="Center" Margin="30,0,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="30"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
 
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                            <Label Content="RTSP：" Width="70" HorizontalContentAlignment="Right" FontSize="14" 
-                                   FontWeight="Bold" VerticalContentAlignment="Center" Foreground="#333333"/>
+                        <!-- 左列：设备信息 -->
+                        <StackPanel Grid.Column="0">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                                <Label Content="RTSP：" Width="70" HorizontalContentAlignment="Right" FontSize="14"
+                                       FontWeight="Bold" VerticalContentAlignment="Center" Foreground="#333333"/>
+                                <TextBox Text="{Binding RtspAddress}" Width="200" Height="30" IsReadOnly="True"
+                                         VerticalContentAlignment="Center" BorderBrush="#888888" BorderThickness="1" Foreground="Black"/>
+                            </StackPanel>
 
-                            <TextBox Text="{Binding RtspAddress}" Width="200" Height="30" IsReadOnly="True" 
-                                     VerticalContentAlignment="Center" BorderBrush="#888888" BorderThickness="1" Foreground="Black"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                                <Label Content="WLAN MAC：" Width="70" HorizontalContentAlignment="Right" FontSize="14"
+                                       FontWeight="Bold" VerticalContentAlignment="Center" Foreground="#333333"/>
+                                <TextBox Text="{Binding WlanMac}" Width="200" Height="30" IsReadOnly="True" VerticalContentAlignment="Center"
+                                         BorderBrush="#888888" BorderThickness="1" Foreground="Black"/>
+                            </StackPanel>
+
+                            <TextBlock Text="点击左侧 [打开视频] 按钮开始预览" Foreground="#999999" HorizontalAlignment="Left" Margin="5,0,0,0"/>
                         </StackPanel>
 
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                            <Label Content="WLAN MAC：" Width="70" HorizontalContentAlignment="Right" FontSize="14" 
-                                   FontWeight="Bold" VerticalContentAlignment="Center" Foreground="#333333"/>
+                        <!-- 分隔线 -->
+                        <Rectangle Grid.Column="1" Width="1" Fill="#DDDDDD" VerticalAlignment="Stretch" Margin="14,0"/>
 
-                            <TextBox Text="{Binding WlanMac}" Width="200" Height="30" IsReadOnly="True" VerticalContentAlignment="Center"
-                                     BorderBrush="#888888" BorderThickness="1" Foreground="Black"/>
+                        <!-- 右列：统计信息 -->
+                        <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="0,0,30,0">
+                            <TextBlock Text="测试统计" FontSize="13" FontWeight="Bold" Foreground="#555555" Margin="0,0,0,10"/>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="70"/>
+                                    <ColumnDefinition Width="70"/>
+                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="80"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                                    <TextBlock Text="PASS" FontSize="11" Foreground="#4CAF50" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{Binding PassCount}" FontSize="28" FontWeight="Bold" Foreground="#4CAF50" HorizontalAlignment="Center"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                                    <TextBlock Text="FAIL" FontSize="11" Foreground="#F44336" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{Binding FailCount}" FontSize="28" FontWeight="Bold" Foreground="#F44336" HorizontalAlignment="Center"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                                    <TextBlock Text="通过率" FontSize="11" Foreground="#1976D2" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{Binding PassRate}" FontSize="22" FontWeight="Bold" Foreground="#1976D2" HorizontalAlignment="Center"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="3" HorizontalAlignment="Center">
+                                    <TextBlock Text="测试时间" FontSize="11" Foreground="#555555" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{Binding TestElapsed}" FontSize="22" FontWeight="Bold" Foreground="#555555" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <Button Content="清除统计" Command="{Binding ClearStatsCommand}"
+                                    Height="28" Width="80" Margin="0,10,0,0"
+                                    HorizontalAlignment="Left"
+                                    Foreground="Black"
+                                    FontSize="12"/>
                         </StackPanel>
-
-                        <TextBlock Text="点击左侧 [打开视频] 按钮开始预览"  Foreground="#999999" HorizontalAlignment="Left" Margin="5,0,0,0"/>
-                    </StackPanel>
+                    </Grid>
                 </Border>
 
                 <Border Background="#1A1A1A" CornerRadius="8" ClipToBounds="True">
