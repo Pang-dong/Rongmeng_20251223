@@ -191,7 +191,7 @@ namespace Rongmeng_20251223.ViewModels
         {
             Application.Current.Dispatcher.Invoke(() =>
             {
-                MainWindow mainWin = new MainWindow(SelectedStation);
+                MainWindow mainWin = new MainWindow(SelectedStation, IsMesMode);
                 mainWin.Show();
                 CloseAction?.Invoke();
             });

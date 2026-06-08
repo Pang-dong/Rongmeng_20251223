@@ -48,6 +48,13 @@ namespace Rongmeng_20251223.ViewModels
             get => _wlanMac;
             set => SetProperty(ref _wlanMac, value);
         }
+
+        private string _rtspAddress;//RTSP地址 控件模板
+        public string RtspAddress
+        {
+            get => _rtspAddress;
+            set => SetProperty(ref _rtspAddress, value);
+        }
         // 控制判定按钮（PASS/FAIL）是否可见
         private bool _isJudgmentButtonsVisible;
         public bool IsJudgmentButtonsVisible
@@ -121,6 +128,9 @@ namespace Rongmeng_20251223.ViewModels
         private string _currentTestPrompt;
         public string CurrentTestPrompt { get => _currentTestPrompt; set => SetProperty(ref _currentTestPrompt, value); }
 
+        private string _currentTestPromptForeground = "#E53935";
+        public string CurrentTestPromptForeground { get => _currentTestPromptForeground; set => SetProperty(ref _currentTestPromptForeground, value); }
+
         private TaskCompletionSource<bool> _userInputSignal;
 
         // ── 统计 ──
@@ -136,6 +146,8 @@ namespace Rongmeng_20251223.ViewModels
         private string _testElapsed = "--:--";
         public string TestElapsed { get => _testElapsed; set => SetProperty(ref _testElapsed, value); }
 
+        private readonly string _currentStation;
+        private readonly bool _isMesMode;
         private DateTime _testStartTime;
         private DispatcherTimer _elapsedTimer;
 
@@ -145,8 +157,10 @@ namespace Rongmeng_20251223.ViewModels
         public IAsyncRelayCommand DisConnectCommand { get; }
         public IRelayCommand ClearStatsCommand { get; }
 
-        public MainViewModel(ClientApi api, string stationName)
+        public MainViewModel(ClientApi api, string stationName, bool isMesMode)
         {
+            _currentStation = stationName;
+            _isMesMode = isMesMode;
             _deviceService = new DeviceBusinessService(api);
             _configService = new StationConfigService();
             _writeTestResultService = new WriteTestResultService();
@@ -158,7 +172,7 @@ namespace Rongmeng_20251223.ViewModels
             UserJudgmentCommand = new RelayCommand<string>(OnUserJudgmentReceived);
 
             ConnectCommand = new AsyncRelayCommand(Connect, CanConnect);
-            DisConnectCommand = new AsyncRelayCommand(DisConnect, CanDisConnect);
+            DisConnectCommand = new AsyncRelayCommand(DisConnect, CanDisConnect); 
             ClearStatsCommand = new RelayCommand(ClearStats);
 
             _elapsedTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
@@ -279,7 +293,34 @@ namespace Rongmeng_20251223.ViewModels
                 IsDisConnecting = true;
                 await Task.Run(() => _deviceService.Disconnect());
             }
-            finally { IsDisConnecting = false; IsVideoPlaying = false; }
+            finally
+            {
+                IsDisConnecting = false;
+                IsVideoPlaying = false;
+                ResetDeviceState();
+            }
+        }
+
+        // 断开连接后重置界面：清空设备信息、测试提示与按钮状态
+        private void ResetDeviceState()
+        {
+            // 设备信息
+            SN = string.Empty;
+            WlanMac = string.Empty;
+            RtspAddress = string.Empty;
+
+            // 测试提示文字与颜色
+            CurrentTestItemName = string.Empty;
+            SetTestPrompt(string.Empty, "#E53935");
+
+            // 判定按钮隐藏，防止误触
+            IsJudgmentButtonsVisible = false;
+
+            // 清除每个测试项的 PASS/FAIL 着色
+            if (CameraControls != null)
+            {
+                foreach (var c in CameraControls) c.TestState = 0;
+            }
         }
 
         // [修改] 连接条件：正在连接时不可点，且已经连接成功后也不可点
@@ -301,6 +342,24 @@ namespace Rongmeng_20251223.ViewModels
             string logEntry = $"[{DateTime.Now:HH:mm:ss}] {message}{Environment.NewLine}";
             StatusText += logEntry;
         }
+
+        // 设置当前测试提示文字与颜色，自动处理跨线程访问 UI 属性
+        private void SetTestPrompt(string text, string color)
+        {
+            if (Application.Current?.Dispatcher.CheckAccess() == false)
+            {
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    CurrentTestPrompt = text;
+                    CurrentTestPromptForeground = color;
+                });
+            }
+            else
+            {
+                CurrentTestPrompt = text;
+                CurrentTestPromptForeground = color;
+            }
+        }
         private async Task RunAutoTestSequence()
         {
             if (IsAutoTesting) return;
@@ -314,16 +373,27 @@ namespace Rongmeng_20251223.ViewModels
             if (scanWin.ShowDialog() != true) return;
             string currentSN = scanWin.ScannedCode;
 
+            if (_isMesMode)
+            {
+                string resultInfo = await WebApiHelper.GetSNCodeInfoAsync(currentSN, _currentStation);
+                SnResponse snResp = JsonConvert.DeserializeObject<SnResponse>(resultInfo);
+                if (snResp.snCodeInfo != null && snResp.snCodeInfo.Count > 0 && snResp.snStatus == "当前工序")
+                    AddLog("工序校验通过，开始测试");
+                else
+                {
+                    AddLog($"SN 校验失败: {snResp.msg}");
+                    return;
+                }
+            }
+
             Dictionary<string, string> results = new Dictionary<string, string>();
 
             try
             {
-                IsAutoTesting = true; // 1. 设置标志位，界面触发器会缩小日志高度，禁用手动按钮
+                IsAutoTesting = true;
                 _testStartTime = DateTime.Now;
                 TestElapsed = "00:00";
                 _elapsedTimer.Start();
-                AddLog(">>>>>> 开启自动化检测流程 <<<<<<");
-
                 // 2. 重置所有按钮状态（颜色恢复默认）
                 foreach (var c in CameraControls) c.TestState = 0;
 
@@ -378,7 +448,7 @@ namespace Rongmeng_20251223.ViewModels
                     _userInputSignal = new TaskCompletionSource<bool>();
                     bool isPass = await _userInputSignal.Task;
 
-                    // 记录MES数据
+                    // 记录MES数据 
                     if (config != null && !string.IsNullOrEmpty(config.MesName))
                     {
                         results[config.MesName] = isPass ? "1" : "0";
@@ -400,11 +470,8 @@ namespace Rongmeng_20251223.ViewModels
                         step.TestState = 1;
                         AddLog($"[PASS] {step.Content} -> 合格");
                     }
-                    // 稍微停顿，让用户看清变绿的效果
                     await Task.Delay(200);
                 }
-
-                AddLog("所有测试项通过！");
                 PassCount++;
                 UpdatePassRate();
                 _elapsedTimer.Stop();
@@ -444,17 +511,20 @@ namespace Rongmeng_20251223.ViewModels
                             string response = await WebApiHelper.WriteTestResultAsync(finalUploadJson);
                             if (string.IsNullOrEmpty(response) || response.Contains("ERROR"))
                             {
+                                SetTestPrompt("接口调用失败", "Red");
                                 AddLog($"接口调用失败: {response}");
                                 return;
                             }
                             var result = JsonConvert.DeserializeObject<BaseResult>(response);
                             if (result != null && result.IsSuccess)
                             {
+                                SetTestPrompt("MES数据上传成功", "Green");
                                 AddLog("MES数据更新成功");
                             }
                             else
                             {
                                 string failMsg = result?.msg ?? "未知错误";
+                                SetTestPrompt(failMsg, "Red");          
                                 AddLog(failMsg);
                                 return;
                             }
@@ -489,5 +559,9 @@ namespace Rongmeng_20251223.ViewModels
             PassRate = "-- %";
             TestElapsed = "--:--";
         }
+
+        private string sN;
+
+        public string SN { get => sN; set => SetProperty(ref sN, value); }
     }
 }

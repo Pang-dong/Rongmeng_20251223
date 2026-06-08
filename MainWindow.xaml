@@ -4,10 +4,10 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:hc="https://handyorg.github.io/handycontrol"
-        xmlns:local="clr-namespace:Rongmeng_20251223"
+        xmlns:local="clr-namespace:Rongmeng_20251223" xmlns:viewmodels="clr-namespace:Rongmeng_20251223.ViewModels" d:DataContext="{d:DesignInstance Type=viewmodels:MainViewModel}"
         mc:Ignorable="d"
         Background="#F5F6F8"
-        Title="LH-Rongmeng" Height="760" Width="1080" MinHeight="600" MinWidth="900"
+        Title="联合_融梦测试软件" Height="760" Width="1080" MinHeight="600" MinWidth="900"
         WindowStartupLocation="CenterScreen"
         KeyDown="Window_KeyDown">
 
@@ -75,25 +75,27 @@
                     <DockPanel LastChildFill="True" Margin="0,0,0,8">
                         <Label Content="IP地址" Width="60" Padding="0,5,0,0" Foreground="#333333" FontWeight="SemiBold"/>
                         <TextBox Text="{Binding DeviceInfo.IPAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-                                 Height="30" Foreground="Black" CaretBrush="Black"/>
+                                 Height="30" Foreground="Black" CaretBrush="Black" IsEnabled="False"/>
                     </DockPanel>
 
                     <DockPanel LastChildFill="True" Margin="0,0,0,12">
                         <Label Content="端口号" Width="60" Padding="0,5,0,0" Foreground="#333333" FontWeight="SemiBold"/>
                         <TextBox Text="{Binding DeviceInfo.Port, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-                                 Height="30" Foreground="Black" CaretBrush="Black"/>
+                                 Height="30" Foreground="Black" CaretBrush="Black" IsEnabled="False"/>
                     </DockPanel>
 
                     <Button Content="{Binding ConnectButtonText}" Command="{Binding ConnectCommand}" 
                             Style="{StaticResource ButtonPrimary}" 
                             HorizontalAlignment="Stretch"
                             Height="40" 
+                            FontSize="14" FontWeight="Bold"
                             Margin="0,0,0,10"/>
 
                     <Button Content="{Binding DisConnectButtonText}" Command="{Binding DisConnectCommand}" 
                             Style="{StaticResource ButtonDanger}" 
                             HorizontalAlignment="Stretch"
                             Height="40" 
+                            FontSize="14" FontWeight="Bold"
                             Margin="0,0,0,0"/>
                 </StackPanel>
 
@@ -191,6 +193,12 @@
 
                         <!-- 左列：设备信息 -->
                         <StackPanel Grid.Column="0">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                                <Label Content="SN：" Width="70" HorizontalContentAlignment="Right" FontSize="14"
+                                       FontWeight="Bold" VerticalContentAlignment="Center" Foreground="#333333"/>
+                                <TextBox Text="{Binding SN}" Width="200" Height="30" IsReadOnly="True" VerticalContentAlignment="Center"
+                                         BorderBrush="#888888" BorderThickness="1" Foreground="Black"/>
+                            </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
                                 <Label Content="RTSP：" Width="70" HorizontalContentAlignment="Right" FontSize="14"
                                        FontWeight="Bold" VerticalContentAlignment="Center" Foreground="#333333"/>
@@ -292,7 +300,7 @@
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="当前测试步骤" Foreground="#666666" FontSize="12"/>
                         <TextBlock Text="{Binding CurrentTestItemName}" FontSize="18" Foreground="{StaticResource PrimaryBrush}" Margin="0,2"/>
-                        <TextBlock Text="{Binding CurrentTestPrompt}" FontSize="32" FontWeight="Bold" Foreground="#E53935" TextWrapping="Wrap" Margin="0,5,0,0"/>
+                        <TextBlock Text="{Binding CurrentTestPrompt}" FontSize="32" FontWeight="Bold" Foreground="{Binding CurrentTestPromptForeground}" TextWrapping="Wrap" Margin="0,5,0,0"/>
                     </StackPanel>
                 </Grid>
             </Border>

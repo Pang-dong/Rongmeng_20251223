@@ -35,13 +35,13 @@ namespace Rongmeng_20251223
         private ClientApi ClientApi;
         private WriteableBitmap writeable;
         private FullScreenWindow _fullScreenWindow;
-        public MainWindow(string stationName = "")
+        public MainWindow(string stationName = "", bool isMesMode = false)
         {
             InitializeComponent();
             ClientApi myApi = ClientApi.BuildClient(this);
 
             // 传给 ViewModel
-            this.DataContext = new MainViewModel(myApi, stationName);
+            this.DataContext = new MainViewModel(myApi, stationName, isMesMode);
 
             FFmpegDecoder.Instance.Initialize(1920, 1080, VideoFormat.H264);
         }

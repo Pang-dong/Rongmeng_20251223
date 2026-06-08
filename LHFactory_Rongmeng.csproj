@@ -82,6 +82,7 @@
     <Compile Include="Interface\Model\MessageICommand.cs" />
     <Compile Include="Interface\Model\Messages.cs" />
     <Compile Include="Interface\Model\StationTestItem.cs" />
+    <Compile Include="Interface\Model\SnResponse.cs" />
     <Compile Include="Interface\Model\WebApiHelper.cs" />
     <Compile Include="LH\lh\ClientApi.cs" />
     <Compile Include="LH\lh\ConfigManager.cs" />
