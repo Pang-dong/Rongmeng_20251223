@@ -48,12 +48,10 @@ namespace Rongmeng_20251223.LH.lh
             {
                 string jsonContent = File.ReadAllText(filePath, Encoding.UTF8);
                 var config = JsonConvert.DeserializeObject<AppConfig>(jsonContent);
-                // 防止文件内容为空导致 config 为 null
                 return config ?? new AppConfig();
             }
             catch
             {
-                // 如果 JSON 格式坏了，也返回默认对象，保证程序不崩
                 return new AppConfig();
             }
         }

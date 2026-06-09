@@ -11,7 +11,6 @@ namespace Rongmeng_20251223.Interface.Model
     {
         public Messages(string value) : base(value)
         {
-
         }
     }
 }

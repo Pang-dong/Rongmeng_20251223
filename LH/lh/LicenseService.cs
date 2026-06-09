@@ -8,7 +8,6 @@ namespace Rongmeng_20251223.Service // 请修改为你的实际命名空间
 {
     public class LicenseService
     {
-        // 定义日志记录器 (假设你使用了log4net，如果没有可以删除)
         private static readonly log4net.ILog logger = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         #region 配置常量

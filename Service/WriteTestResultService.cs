@@ -18,23 +18,24 @@ namespace Rongmeng_20251223.Service
         /// </summary>
         /// <param name="originalJson">原始的测试结果 JSON 字符串</param>
         /// <returns>包含额外信息的新 JSON 字符串</returns>
-        public  string EnrichJsonData(string originalJson)
+        public  string EnrichJsonData(string originalJson,bool ret,string sn)
         {
             try
             {
+                string result = ret ? "1" : "0";
                 JObject jsonObject = JObject.Parse(originalJson);
                 var config = ConfigManager.Load();
                 jsonObject.Add("Operator", config.UserName);       // 操作员
                 jsonObject.Add("StationName", config.LastStation); // 工站名称
-
-                jsonObject.Add("DataType", "FinalResult");
+                jsonObject.Add("SN", sn);
+                jsonObject.Add("ZJ_Result",result); 
 
                 return jsonObject.ToString(Newtonsoft.Json.Formatting.None);
             }
             catch (Exception ex)
             {
                 AddLog($"JSON 组装失败: {ex.Message}");
-                return originalJson; // 如果出错，至少返回原始数据
+                return null;
             }
         }
         private void AddLog(string msg) => WeakReferenceMessenger.Default.Send(new Messages(msg));

@@ -462,7 +462,7 @@ namespace Rongmeng_20251223.ViewModels
                         UpdatePassRate();
                         _elapsedTimer.Stop();
                         MessageBox.Show($"测试在步骤 [{step.Content}] 失败！", "测试不合格", MessageBoxButton.OK, MessageBoxImage.Error);
-                        GenerateAndLogResult(results);
+                        GenerateAndLogResult(results,false,sN);
                         return; // 失败直接中断
                     }
                     else
@@ -478,7 +478,7 @@ namespace Rongmeng_20251223.ViewModels
                 var MesConfig = ConfigManager.Load();
                 if (MesConfig.IsMesMode)
                 {
-                    GenerateAndLogResult(results);
+                    GenerateAndLogResult(results,true,sN);
                 }
             }
             catch (Exception ex)
@@ -495,7 +495,7 @@ namespace Rongmeng_20251223.ViewModels
             }
         }
 
-        private void GenerateAndLogResult(Dictionary<string, string> results)
+        private void GenerateAndLogResult(Dictionary<string, string> results,bool ret,string sn)
         {
             if (results.Count > 0)
             {
@@ -503,7 +503,12 @@ namespace Rongmeng_20251223.ViewModels
                 var config = ConfigManager.Load();//必须要这样把config的配置读出来
                 if (config.IsMesMode)
                 {
-                    string finalUploadJson = _writeTestResultService.EnrichJsonData(jsonResult);
+                    string finalUploadJson = _writeTestResultService.EnrichJsonData(jsonResult,ret,sn);
+                    if(string.IsNullOrEmpty(finalUploadJson))
+                    {
+                        SetTestPrompt("结果配置写入错误", "Red");
+                        return;
+                    }
                     Task.Run(async () =>
                     {
                         try
